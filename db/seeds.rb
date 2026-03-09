@@ -168,4 +168,172 @@ User.find_or_create_by!(email: "admin@example.com") do |u|
 end
 puts "  Admin user created (admin@example.com / password)"
 
+# -----------------------------------------------
+# 5. Shop Details
+# -----------------------------------------------
+puts "Updating shop details..."
+
+SHOP_DETAILS = {
+  "maruhan-shinjuku" => {
+    slot_rates: ["20スロ", "5スロ"],
+    exchange_rate: :equal_rate,
+    total_machines: 800,
+    slot_machines: 350,
+    business_hours: "10:00〜22:45",
+    holidays: "年中無休",
+    opened_on: "2014-11-28",
+    former_event_days: "毎月7日, 17日, 27日"
+  },
+  "mega-gaia-shinjuku" => {
+    slot_rates: ["20スロ", "10スロ", "5スロ"],
+    exchange_rate: :equal_rate,
+    total_machines: 620,
+    slot_machines: 280,
+    business_hours: "10:00〜22:50",
+    holidays: "年中無休",
+    opened_on: "2018-07-07",
+    former_event_days: "毎月3日, 13日, 23日"
+  },
+  "espas-shinjuku" => {
+    slot_rates: ["20スロ", "5スロ"],
+    exchange_rate: :equal_rate,
+    total_machines: 540,
+    slot_machines: 240,
+    business_hours: "10:00〜22:45",
+    holidays: "年中無休",
+    opened_on: "2005-03-15",
+    former_event_days: "毎月5日, 15日, 25日"
+  },
+  "big-march-ueno" => {
+    slot_rates: ["20スロ", "10スロ"],
+    exchange_rate: :rate_56,
+    total_machines: 450,
+    slot_machines: 200,
+    business_hours: "10:00〜22:45",
+    holidays: "年中無休",
+    opened_on: "2010-06-01",
+    former_event_days: "毎月1日, 11日, 21日"
+  },
+  "maruhan-umeda" => {
+    slot_rates: ["20スロ", "5スロ", "2スロ"],
+    exchange_rate: :rate_56,
+    total_machines: 700,
+    slot_machines: 320,
+    business_hours: "10:00〜22:45",
+    holidays: "年中無休",
+    opened_on: "2012-04-20",
+    former_event_days: "毎月8日, 18日, 28日"
+  },
+  "kicona-namba" => {
+    slot_rates: ["20スロ", "10スロ", "5スロ"],
+    exchange_rate: :rate_56,
+    total_machines: 580,
+    slot_machines: 260,
+    business_hours: "10:00〜22:50",
+    holidays: "年中無休",
+    opened_on: "2009-11-11",
+    former_event_days: "毎月6日, 16日, 26日"
+  },
+  "maruhan-yokohama-machida" => {
+    slot_rates: ["20スロ", "5スロ", "1スロ"],
+    exchange_rate: :equal_rate,
+    total_machines: 1200,
+    slot_machines: 520,
+    business_hours: "10:00〜22:45",
+    holidays: "年中無休",
+    opened_on: "2008-12-01",
+    former_event_days: "毎月7日, 17日, 27日"
+  },
+  "garden-yokohama" => {
+    slot_rates: ["20スロ", "5スロ"],
+    exchange_rate: :equal_rate,
+    total_machines: 480,
+    slot_machines: 210,
+    business_hours: "10:00〜22:45",
+    holidays: "年中無休",
+    opened_on: "2016-09-10",
+    former_event_days: "毎月2日, 12日, 22日"
+  },
+  "king-nagoya-nishiki" => {
+    slot_rates: ["20スロ", "10スロ", "5スロ", "2スロ"],
+    exchange_rate: :rate_50,
+    total_machines: 650,
+    slot_machines: 300,
+    business_hours: "09:00〜22:45",
+    holidays: "年中無休",
+    opened_on: "2011-03-03",
+    former_event_days: "毎月9日, 19日, 29日"
+  },
+  "maruhan-nagoya-ekimae" => {
+    slot_rates: ["20スロ", "5スロ"],
+    exchange_rate: :rate_50,
+    total_machines: 550,
+    slot_machines: 250,
+    business_hours: "10:00〜22:45",
+    holidays: "年中無休",
+    opened_on: "2013-07-07",
+    former_event_days: "毎月7日, 17日, 27日"
+  },
+  "maruhan-hakata-ekimae" => {
+    slot_rates: ["20スロ", "5スロ"],
+    exchange_rate: :equal_rate,
+    total_machines: 500,
+    slot_machines: 220,
+    business_hours: "10:00〜22:45",
+    holidays: "年中無休",
+    opened_on: "2015-05-15",
+    former_event_days: "毎月7日, 17日, 27日"
+  },
+  "eagle-r1-sapporo" => {
+    slot_rates: ["20スロ", "5スロ", "2スロ"],
+    exchange_rate: :rate_56,
+    total_machines: 420,
+    slot_machines: 190,
+    business_hours: "10:00〜22:50",
+    holidays: "年中無休",
+    opened_on: "2007-08-08",
+    former_event_days: "毎月4日, 14日, 24日"
+  },
+  "maruhan-sendai-ekimae" => {
+    slot_rates: ["20スロ", "5スロ"],
+    exchange_rate: :equal_rate,
+    total_machines: 460,
+    slot_machines: 200,
+    business_hours: "10:00〜22:45",
+    holidays: "年中無休",
+    opened_on: "2017-02-22",
+    former_event_days: "毎月7日, 17日, 27日"
+  },
+  "garden-omiya" => {
+    slot_rates: ["20スロ", "10スロ", "5スロ"],
+    exchange_rate: :equal_rate,
+    total_machines: 530,
+    slot_machines: 240,
+    business_hours: "10:00〜22:45",
+    holidays: "年中無休",
+    opened_on: "2019-04-01",
+    former_event_days: "毎月2日, 12日, 22日"
+  },
+  "maruhan-sannomiya" => {
+    slot_rates: ["20スロ", "5スロ", "1スロ"],
+    exchange_rate: :rate_56,
+    total_machines: 490,
+    slot_machines: 210,
+    business_hours: "10:00〜22:45",
+    holidays: "年中無休",
+    opened_on: "2013-11-11",
+    former_event_days: "毎月7日, 17日, 27日"
+  }
+}.freeze
+
+SHOP_DETAILS.each do |slug, details|
+  shop = Shop.find_by(slug: slug)
+  if shop
+    shop.update!(details)
+  else
+    puts "  WARNING: Shop #{slug} not found"
+  end
+end
+puts "  Shop details updated"
+
 puts "=== Seeding complete ==="

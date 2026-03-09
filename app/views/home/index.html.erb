@@ -1,29 +1,58 @@
 <% content_for(:title) { "スロリセnavi - パチスロリセット・設定判別の投票サイト" } %>
 
-<section class="mt-4">
-  <!-- Search -->
-  <div class="mb-6">
-    <%= form_tag root_path, method: :get, data: { turbo_frame: "search_results" }, class: "relative" do %>
-      <input type="text" name="q" value="<%= params[:q] %>"
-             placeholder="店舗名で検索..."
-             class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent"
-             autocomplete="off">
-      <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 bg-primary text-white px-4 py-1.5 rounded-md text-sm hover:bg-primary-light">
-        検索
-      </button>
-    <% end %>
-  </div>
+<!-- Hero Section -->
+<section class="bg-gradient-to-br from-blue-800 via-blue-900 to-indigo-900 -mx-4 px-4 py-10 sm:py-14 -mt-4 mb-8 rounded-b-2xl">
+  <div class="max-w-3xl mx-auto text-center">
+    <h1 class="text-2xl sm:text-3xl font-bold text-white mb-3">
+      パチスロの設定情報、<br class="sm:hidden">みんなで集めよう
+    </h1>
+    <p class="text-blue-200 text-sm sm:text-base mb-8">
+      店舗×機種×日付でリセット・設定予想をワンタップ投票。集合知でホールの傾向を可視化。
+    </p>
 
-  <!-- Search Results -->
+    <!-- Stats Counters -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg mx-auto">
+      <div class="bg-white/10 backdrop-blur rounded-lg px-3 py-3">
+        <p class="text-2xl sm:text-3xl font-bold text-white"><%= @today_votes_count %></p>
+        <p class="text-blue-300 text-xs mt-0.5">今日の投票</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-lg px-3 py-3">
+        <p class="text-2xl sm:text-3xl font-bold text-white"><%= @total_votes_count %></p>
+        <p class="text-blue-300 text-xs mt-0.5">累計投票</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-lg px-3 py-3">
+        <p class="text-2xl sm:text-3xl font-bold text-white"><%= @shops_count %></p>
+        <p class="text-blue-300 text-xs mt-0.5">登録店舗</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-lg px-3 py-3">
+        <p class="text-2xl sm:text-3xl font-bold text-white"><%= @machines_count %></p>
+        <p class="text-blue-300 text-xs mt-0.5">対応機種</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Search -->
+<section class="mb-8">
+  <%= form_tag root_path, method: :get, data: { turbo_frame: "search_results" }, class: "relative" do %>
+    <input type="text" name="q" value="<%= params[:q] %>"
+           placeholder="店舗名で検索..."
+           class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+           autocomplete="off">
+    <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm hover:bg-blue-600 transition">
+      検索
+    </button>
+  <% end %>
+
   <turbo-frame id="search_results">
     <% if params[:q].present? && @search_results %>
-      <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <div class="mt-3 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <h2 class="text-sm font-semibold text-gray-600 mb-3">「<%= params[:q] %>」の検索結果 (<%= @search_results.size %>件)</h2>
         <% if @search_results.any? %>
           <ul class="divide-y divide-gray-100">
             <% @search_results.each do |shop| %>
               <li class="py-2">
-                <%= link_to shop_path(shop.slug), class: "flex justify-between items-center hover:bg-gray-50 -mx-2 px-2 py-1 rounded" do %>
+                <%= link_to shop_path(shop.slug), class: "flex justify-between items-center hover:bg-gray-50 -mx-2 px-2 py-1 rounded", data: { turbo_frame: "_top" } do %>
                   <span class="font-medium text-sm"><%= shop.name %></span>
                   <span class="text-xs text-gray-500"><%= shop.prefecture.name %></span>
                 <% end %>
@@ -36,59 +65,129 @@
       </div>
     <% end %>
   </turbo-frame>
+</section>
 
-  <!-- Prefecture Grid -->
-  <div class="mb-8">
-    <h2 class="text-lg font-bold text-gray-800 mb-4">都道府県から探す</h2>
-    <%
-      regions = {
-        "北海道・東北" => %w[北海道 青森県 岩手県 宮城県 秋田県 山形県 福島県],
-        "関東" => %w[茨城県 栃木県 群馬県 埼玉県 千葉県 東京都 神奈川県],
-        "中部" => %w[新潟県 富山県 石川県 福井県 山梨県 長野県 岐阜県 静岡県 愛知県],
-        "近畿" => %w[三重県 滋賀県 京都府 大阪府 兵庫県 奈良県 和歌山県],
-        "中国" => %w[鳥取県 島根県 岡山県 広島県 山口県],
-        "四国" => %w[徳島県 香川県 愛媛県 高知県],
-        "九州・沖縄" => %w[福岡県 佐賀県 長崎県 熊本県 大分県 宮崎県 鹿児島県 沖縄県]
-      }
-      prefectures_by_name = @prefectures.index_by(&:name)
-    %>
-
-    <% regions.each do |region_name, pref_names| %>
-      <div class="mb-4">
-        <h3 class="text-sm font-semibold text-gray-600 mb-2 border-l-4 border-primary pl-2"><%= region_name %></h3>
-        <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-1.5">
-          <% pref_names.each do |pref_name| %>
-            <% pref = prefectures_by_name[pref_name] %>
-            <% if pref %>
-              <%= link_to prefecture_path(pref.slug),
-                  class: "bg-white border border-gray-200 rounded-md px-2 py-1.5 text-xs text-center hover:bg-primary hover:text-white hover:border-primary transition-colors truncate" do %>
-                <%= pref_name %>
-              <% end %>
-            <% else %>
-              <span class="bg-gray-100 border border-gray-200 rounded-md px-2 py-1.5 text-xs text-center text-gray-400 truncate">
-                <%= pref_name %>
-              </span>
-            <% end %>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
+<!-- How to Use (3 steps) -->
+<section class="mb-8">
+  <h2 class="text-lg font-bold text-gray-800 mb-4">使い方</h2>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+      <div class="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center mx-auto mb-2 text-lg font-bold">1</div>
+      <h3 class="font-semibold text-sm mb-1">店舗を選ぶ</h3>
+      <p class="text-xs text-gray-500">都道府県や検索から<br>行きつけのホールを探す</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+      <div class="w-10 h-10 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto mb-2 text-lg font-bold">2</div>
+      <h3 class="font-semibold text-sm mb-1">ワンタップ投票</h3>
+      <p class="text-xs text-gray-500">リセット判別・設定予想を<br>ボタンひとつで投票</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+      <div class="w-10 h-10 bg-green-100 text-green-700 rounded-full flex items-center justify-center mx-auto mb-2 text-lg font-bold">3</div>
+      <h3 class="font-semibold text-sm mb-1">みんなの結果を見る</h3>
+      <p class="text-xs text-gray-500">集合知でリセット率・<br>設定平均をチェック</p>
+    </div>
   </div>
+</section>
 
-  <!-- Recent Active Shops -->
-  <div>
-    <h2 class="text-lg font-bold text-gray-800 mb-4">最近の更新店舗</h2>
-    <% if @recent_shops.any? %>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <% @recent_shops.each do |shop| %>
-          <%= link_to shop_path(shop.slug), class: "bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow block" do %>
-            <p class="font-medium text-sm"><%= shop.name %></p>
-            <p class="text-xs text-gray-500 mt-1"><%= shop.prefecture.name %> <%= shop.address %></p>
+<!-- Today's Trending Data -->
+<section class="mb-8">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- Hot Shops -->
+    <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+      <h2 class="text-sm font-bold text-gray-800 mb-3 border-l-4 border-red-500 pl-2">今日の注目店舗</h2>
+      <% if @hot_shops.any? %>
+        <ol class="space-y-2">
+          <% @hot_shops.each_with_index do |item, i| %>
+            <li class="flex items-center gap-2">
+              <span class="text-xs font-bold text-gray-400 w-4"><%= i + 1 %></span>
+              <%= link_to shop_path(item[:shop].slug), class: "text-sm font-medium text-blue-700 hover:underline truncate flex-1" do %>
+                <%= item[:shop].name %>
+              <% end %>
+              <span class="text-xs text-gray-500 shrink-0"><%= item[:votes] %>票</span>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="text-xs text-gray-400 py-4 text-center">今日の投票データはまだありません</p>
+      <% end %>
+    </div>
+
+    <!-- High Reset Rate -->
+    <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+      <h2 class="text-sm font-bold text-gray-800 mb-3 border-l-4 border-green-500 pl-2">今日リセット率が高い機種</h2>
+      <% if @high_reset_machines.any? %>
+        <ol class="space-y-2">
+          <% @high_reset_machines.each_with_index do |item, i| %>
+            <li class="flex items-center gap-2">
+              <span class="text-xs font-bold text-gray-400 w-4"><%= i + 1 %></span>
+              <div class="flex-1 min-w-0">
+                <%= link_to machine_path(item[:machine].slug), class: "text-sm font-medium text-blue-700 hover:underline truncate block" do %>
+                  <%= item[:machine].name %>
+                <% end %>
+                <span class="text-xs text-gray-400"><%= item[:shop].name %></span>
+              </div>
+              <span class="text-xs font-semibold text-green-600 shrink-0"><%= item[:rate] %>%</span>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="text-xs text-gray-400 py-4 text-center">今日のリセットデータはまだありません</p>
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<!-- Prefecture Grid -->
+<section class="mb-8">
+  <h2 class="text-lg font-bold text-gray-800 mb-4">都道府県から探す</h2>
+  <%
+    regions = {
+      "北海道・東北" => %w[北海道 青森県 岩手県 宮城県 秋田県 山形県 福島県],
+      "関東" => %w[茨城県 栃木県 群馬県 埼玉県 千葉県 東京都 神奈川県],
+      "中部" => %w[新潟県 富山県 石川県 福井県 山梨県 長野県 岐阜県 静岡県 愛知県],
+      "近畿" => %w[三重県 滋賀県 京都府 大阪府 兵庫県 奈良県 和歌山県],
+      "中国" => %w[鳥取県 島根県 岡山県 広島県 山口県],
+      "四国" => %w[徳島県 香川県 愛媛県 高知県],
+      "九州・沖縄" => %w[福岡県 佐賀県 長崎県 熊本県 大分県 宮崎県 鹿児島県 沖縄県]
+    }
+    prefectures_by_name = @prefectures.index_by(&:name)
+  %>
+
+  <% regions.each do |region_name, pref_names| %>
+    <div class="mb-4">
+      <h3 class="text-sm font-semibold text-gray-600 mb-2 border-l-4 border-blue-700 pl-2"><%= region_name %></h3>
+      <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-1.5">
+        <% pref_names.each do |pref_name| %>
+          <% pref = prefectures_by_name[pref_name] %>
+          <% if pref %>
+            <%= link_to prefecture_path(pref.slug),
+                class: "bg-white border border-gray-200 rounded-md px-2 py-1.5 text-xs text-center hover:bg-blue-700 hover:text-white hover:border-blue-700 transition-colors truncate" do %>
+              <%= pref_name %>
+            <% end %>
+          <% else %>
+            <span class="bg-gray-100 border border-gray-200 rounded-md px-2 py-1.5 text-xs text-center text-gray-400 truncate">
+              <%= pref_name %>
+            </span>
           <% end %>
         <% end %>
       </div>
-    <% else %>
-      <p class="text-sm text-gray-500">まだ店舗データがありません。</p>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
+</section>
+
+<!-- Recent Active Shops -->
+<section class="mb-8">
+  <h2 class="text-lg font-bold text-gray-800 mb-4">最近の更新店舗</h2>
+  <% if @recent_shops.any? %>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <% @recent_shops.each do |shop| %>
+        <%= link_to shop_path(shop.slug), class: "bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow block" do %>
+          <p class="font-medium text-sm"><%= shop.name %></p>
+          <p class="text-xs text-gray-500 mt-1"><%= shop.prefecture.name %> <%= shop.address %></p>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-sm text-gray-500">まだ店舗データがありません。</p>
+  <% end %>
 </section>

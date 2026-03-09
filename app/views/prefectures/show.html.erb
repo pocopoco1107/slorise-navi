@@ -12,6 +12,13 @@
       <% @shops.each do |shop| %>
         <%= link_to shop_path(shop.slug), class: "bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow block" do %>
           <p class="font-medium"><%= shop.name %></p>
+          <% if shop.slot_rates.present? %>
+            <div class="flex gap-1 mt-1">
+              <% shop.slot_rates.each do |rate| %>
+                <span class="inline-block bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 rounded"><%= rate %></span>
+              <% end %>
+            </div>
+          <% end %>
           <% if shop.address.present? %>
             <p class="text-sm text-gray-500 mt-1"><%= shop.address %></p>
           <% end %>
@@ -20,7 +27,6 @@
     </div>
 
     <div class="mt-6">
-      <%= paginate @shops, theme: 'tailwind' rescue nil %>
       <nav class="flex justify-center">
         <%= paginate @shops %>
       </nav>

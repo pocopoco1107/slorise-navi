@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_09_002852) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_09_010024) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -85,7 +85,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_002852) do
     t.string "slug", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "slot_rates", default: [], array: true
+    t.integer "exchange_rate", default: 0
+    t.integer "total_machines"
+    t.integer "slot_machines"
+    t.string "business_hours"
+    t.string "holidays", default: "年中無休"
+    t.date "opened_on"
+    t.string "former_event_days"
+    t.text "notes"
     t.index ["prefecture_id"], name: "index_shops_on_prefecture_id"
+    t.index ["slot_rates"], name: "index_shops_on_slot_rates", using: :gin
     t.index ["slug"], name: "index_shops_on_slug", unique: true
   end
 

@@ -81,9 +81,7 @@ test:
 production:
   primary: &primary_production
     <<: *default
-    database: slorise_navi_production
-    username: slorise_navi
-    password: <%= ENV["SLORISE_NAVI_DATABASE_PASSWORD"] %>
+    url: <%= ENV["DATABASE_URL"] %>
   cache:
     <<: *primary_production
     database: slorise_navi_production_cache

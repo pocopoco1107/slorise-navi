@@ -18,4 +18,8 @@ Rails.application.routes.draw do
   resources :reports, only: [:create]
 
   get "up" => "rails/health#show", as: :rails_health_check
+
+  # Error pages
+  match "/404", to: "errors#not_found", via: :all
+  match "/500", to: "errors#internal_server_error", via: :all
 end

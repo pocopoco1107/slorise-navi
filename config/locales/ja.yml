@@ -1,0 +1,33 @@
+ja:
+  activerecord:
+    models:
+      vote: 投票
+      comment: コメント
+      shop: 店舗
+      machine_model: 機種
+      report: 通報
+    attributes:
+      vote:
+        voted_on: 投票日
+        reset_vote: リセット投票
+        setting_vote: 設定投票
+        voter_token: 投票者トークン
+      comment:
+        body: コメント本文
+        commenter_name: 名前
+      shop:
+        name: 店舗名
+        address: 住所
+      machine_model:
+        name: 機種名
+  errors:
+    messages:
+      blank: "を入力してください"
+      taken: "はすでに使用されています"
+      too_long: "は%{count}文字以内にしてください"
+  date:
+    formats:
+      default: "%Y年%m月%d日"
+  time:
+    formats:
+      default: "%Y年%m月%d日 %H:%M"

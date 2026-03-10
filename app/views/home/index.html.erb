@@ -1,73 +1,81 @@
 <% content_for(:title) { "スロリセnavi - パチスロリセット・設定判別の投票サイト" } %>
 
-<!-- Hero Section -->
-<section class="bg-gradient-to-br from-blue-800 via-blue-900 to-indigo-900 dark:from-gray-800 dark:via-gray-900 dark:to-gray-950 -mx-4 px-4 py-10 sm:py-14 -mt-4 mb-8 rounded-b-2xl">
-  <div class="max-w-3xl mx-auto text-center">
-    <div class="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-4">
-      <%= image_tag "slot_machine.svg", alt: "スロットマシン", class: "w-full h-full drop-shadow-lg" %>
-    </div>
-    <h1 class="text-2xl sm:text-3xl font-bold text-white mb-3">
-      パチスロの設定情報、<br class="sm:hidden">みんなで集めよう
-    </h1>
-    <p class="text-blue-200 dark:text-gray-300 text-sm sm:text-base mb-8">
-      店舗×機種×日付でリセット・設定予想をワンタップ投票。集合知でホールの傾向を可視化。
-    </p>
+<!-- ============================================
+     Hero Section
+     ============================================ -->
+<section class="relative pb-12 pt-12 md:pb-16 md:pt-20">
+  <!-- Subtle gradient background -->
+  <div class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-primary/5 via-transparent to-transparent"></div>
 
-    <!-- Stats Counters -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg mx-auto">
-      <div class="bg-white/10 backdrop-blur rounded-lg px-3 py-3">
-        <p class="text-2xl sm:text-3xl font-bold text-white"><%= @today_votes_count %></p>
-        <p class="text-blue-300 dark:text-gray-400 text-xs mt-0.5">今日の投票</p>
+  <div class="flex flex-col gap-8 max-w-6xl mx-auto px-4">
+    <div class="flex flex-col gap-4">
+      <h1 class="text-balance text-3xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
+        今日の稼働状況<br>
+        <span class="text-primary">みんなで集めよう</span>
+      </h1>
+      <p class="max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
+        パチスロのリセット・設定情報を投票。
+        みんなの投票でお店の傾向が見えてくる。
+      </p>
+    </div>
+
+    <!-- Hero Stats -->
+    <div class="flex flex-wrap items-center gap-x-8 gap-y-4">
+      <div class="flex items-baseline gap-2">
+        <span class="text-2xl font-bold tabular-nums tracking-tight text-foreground md:text-3xl"><%= number_with_delimiter(@total_votes_count) %></span>
+        <span class="text-sm text-muted-foreground">累計投票数</span>
       </div>
-      <div class="bg-white/10 backdrop-blur rounded-lg px-3 py-3">
-        <p class="text-2xl sm:text-3xl font-bold text-white"><%= @total_votes_count %></p>
-        <p class="text-blue-300 dark:text-gray-400 text-xs mt-0.5">累計投票</p>
+      <div class="flex items-baseline gap-2">
+        <span class="text-2xl font-bold tabular-nums tracking-tight text-foreground md:text-3xl"><%= number_with_delimiter(@shops_count) %></span>
+        <span class="text-sm text-muted-foreground">登録店舗</span>
       </div>
-      <div class="bg-white/10 backdrop-blur rounded-lg px-3 py-3">
-        <p class="text-2xl sm:text-3xl font-bold text-white"><%= @shops_count %></p>
-        <p class="text-blue-300 dark:text-gray-400 text-xs mt-0.5">登録店舗</p>
-      </div>
-      <div class="bg-white/10 backdrop-blur rounded-lg px-3 py-3">
-        <p class="text-2xl sm:text-3xl font-bold text-white"><%= @machines_count %></p>
-        <p class="text-blue-300 dark:text-gray-400 text-xs mt-0.5">主要機種</p>
+      <div class="flex items-baseline gap-2">
+        <span class="text-2xl font-bold tabular-nums tracking-tight text-foreground md:text-3xl"><%= number_with_delimiter(@today_votes_count) %></span>
+        <span class="text-sm text-muted-foreground">今日の投票</span>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Search -->
-<section class="mb-8">
-  <%= form_tag root_path, method: :get, data: { turbo_frame: "search_results" }, class: "relative" do %>
-    <input type="text" name="q" value="<%= params[:q] %>"
-           placeholder="店舗名で検索..."
-           class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm dark:shadow-none dark:placeholder-gray-400"
-           autocomplete="off">
-    <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-700 dark:bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-600 dark:hover:bg-blue-500 active:scale-95 transition-all duration-150">
-      検索
-    </button>
+<!-- ============================================
+     Search Bar
+     ============================================ -->
+<section class="pb-10 md:pb-14 max-w-6xl mx-auto px-4">
+  <%= form_tag root_path, method: :get, data: { turbo_frame: "search_results" }, class: "relative w-full" do %>
+    <svg class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/>
+      <path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
+    </svg>
+    <input type="search" name="q" value="<%= params[:q] %>"
+           placeholder="店舗名・機種名で検索"
+           autocomplete="off"
+           class="h-12 w-full rounded-lg border border-border bg-card pl-12 pr-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none md:h-14 md:text-lg transition-colors">
   <% end %>
 
   <turbo-frame id="search_results">
     <% if params[:q].present? && @search_results %>
-      <div class="mt-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-        <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3">「<%= params[:q] %>」の検索結果 (<%= @search_results.size %>件)</h2>
+      <div class="mt-3 bg-card rounded-lg border border-border p-4">
+        <h2 class="text-sm font-semibold text-muted-foreground mb-3">
+          「<%= params[:q] %>」の検索結果 (<%= @search_results.size %>件)
+        </h2>
         <% if @search_results.any? %>
-          <ul class="divide-y divide-gray-100 dark:divide-gray-700">
+          <ul class="divide-y divide-border">
             <% @search_results.each do |shop| %>
               <li class="py-2">
-                <%= link_to shop_path(shop.slug), class: "flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700 -mx-2 px-2 py-2.5 rounded transition-colors duration-150 min-h-[44px]", data: { turbo_frame: "_top" } do %>
-                  <span class="font-medium text-sm"><%= shop.name %></span>
-                  <span class="text-xs text-gray-500"><%= shop.prefecture.name %></span>
+                <%= link_to shop_path(shop.slug), class: "flex justify-between items-center hover:bg-secondary -mx-2 px-2 py-2.5 rounded transition-colors duration-150 min-h-[44px]", data: { turbo_frame: "_top" } do %>
+                  <span class="font-medium text-sm text-foreground"><%= shop.name %></span>
+                  <span class="text-xs text-muted-foreground"><%= shop.prefecture.name %></span>
                 <% end %>
               </li>
             <% end %>
           </ul>
         <% else %>
-          <div class="py-4 flex flex-col items-center">
-            <div class="w-16 h-16 mb-2">
-              <%= image_tag "empty_search.svg", alt: "見つかりません", class: "w-full h-full opacity-60" %>
-            </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">該当する店舗が見つかりませんでした。</p>
+          <div class="py-6 flex flex-col items-center">
+            <svg class="w-12 h-12 text-muted-foreground/40 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
+            </svg>
+            <p class="text-sm text-muted-foreground">該当する店舗が見つかりませんでした。</p>
           </div>
         <% end %>
       </div>
@@ -75,39 +83,197 @@
   </turbo-frame>
 </section>
 
-<!-- Favorite Shops -->
-<section class="mb-8" data-controller="favorites-list">
-  <div data-favorites-list-target="container" class="hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-    <h2 class="text-sm font-bold text-gray-800 dark:text-gray-100 mb-2 border-l-4 border-yellow-500 pl-2">お気に入り店舗</h2>
-    <ul class="divide-y divide-gray-100 dark:divide-gray-700" data-favorites-list></ul>
+<!-- ============================================
+     Trending Shops (Carousel)
+     ============================================ -->
+<% if @hot_shops.any? %>
+  <section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4" data-controller="carousel">
+    <div class="mb-4 flex items-center gap-2">
+      <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+        <polyline points="17 6 23 6 23 12"/>
+      </svg>
+      <h2 class="text-lg font-semibold tracking-tight text-foreground">トレンド店舗</h2>
+    </div>
+
+    <div class="relative">
+      <!-- Prev Button -->
+      <button type="button"
+              data-carousel-target="prevBtn"
+              data-action="click->carousel#prev"
+              class="invisible absolute -left-3 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-card border border-border shadow-lg hover:bg-secondary transition-colors md:flex hidden sm:flex">
+        <svg class="h-4 w-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <!-- Track -->
+      <div data-carousel-target="track"
+           class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide scroll-smooth snap-x snap-mandatory">
+        <% @hot_shops.each do |item| %>
+          <%= link_to shop_path(item[:shop].slug),
+              class: "group flex min-w-[240px] max-w-[280px] flex-col gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/50 hover:bg-secondary snap-start shrink-0",
+              data: { carousel_card: "", turbo_frame: "_top" } do %>
+            <div class="flex flex-col gap-1">
+              <h3 class="text-sm font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                <%= item[:shop].name %>
+              </h3>
+              <p class="text-xs text-muted-foreground"><%= item[:shop].prefecture&.name %></p>
+            </div>
+            <div class="flex items-end justify-between">
+              <div class="flex flex-col gap-0.5">
+                <span class="text-xs text-muted-foreground">今日の投票</span>
+                <span class="text-lg font-semibold tabular-nums text-foreground">
+                  <%= item[:votes] %><span class="text-xs font-normal text-muted-foreground ml-0.5">票</span>
+                </span>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+
+      <!-- Next Button -->
+      <button type="button"
+              data-carousel-target="nextBtn"
+              data-action="click->carousel#next"
+              class="invisible absolute -right-3 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-card border border-border shadow-lg hover:bg-secondary transition-colors md:flex hidden sm:flex">
+        <svg class="h-4 w-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <!-- Dots -->
+      <div data-carousel-target="dots" class="flex items-center justify-center gap-2 mt-3 text-muted-foreground"></div>
+    </div>
+  </section>
+<% end %>
+
+<!-- ============================================
+     Favorite Shops
+     ============================================ -->
+<section class="pb-10 md:pb-14 max-w-6xl mx-auto px-4" data-controller="favorites-list">
+  <div data-favorites-list-target="container" class="hidden">
+    <div class="mb-4 flex items-center gap-2">
+      <svg class="h-5 w-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+      <h2 class="text-lg font-semibold tracking-tight text-foreground">お気に入り店舗</h2>
+    </div>
+    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3" data-favorites-list></ul>
   </div>
 </section>
 
-<!-- How to Use (3 steps) -->
-<section class="mb-8">
-  <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">使い方</h2>
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-center shadow-sm">
-      <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-2 text-lg font-bold">1</div>
-      <h3 class="font-semibold text-sm mb-1">店舗を選ぶ</h3>
-      <p class="text-xs text-gray-500 dark:text-gray-400">都道府県や検索から<br>行きつけのホールを探す</p>
+<!-- ============================================
+     AI Recommendations
+     ============================================ -->
+<% if @recommendations.present? %>
+  <section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4">
+    <div class="mb-4 flex items-center gap-2">
+      <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h2 class="text-lg font-semibold tracking-tight text-foreground">今日のおすすめ店舗</h2>
     </div>
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-center shadow-sm">
-      <div class="w-10 h-10 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 rounded-full flex items-center justify-center mx-auto mb-2 text-lg font-bold">2</div>
-      <h3 class="font-semibold text-sm mb-1">ワンタップ投票</h3>
-      <p class="text-xs text-gray-500 dark:text-gray-400">リセット判別・設定予想を<br>ボタンひとつで投票</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <% @recommendations.each_with_index do |rec, i| %>
+        <%= link_to shop_path(rec.shop.slug), class: "group flex flex-col gap-2 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/50 hover:bg-secondary", data: { turbo_frame: "_top" } do %>
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold
+                <%= case i when 0 then 'bg-primary/15 text-primary' when 1 then 'bg-primary/10 text-primary' else 'bg-muted text-muted-foreground' end %>">
+                <%= i + 1 %>
+              </span>
+              <p class="font-medium text-sm text-foreground truncate group-hover:text-primary transition-colors"><%= rec.shop.name %></p>
+            </div>
+            <% if rec.shop.prefecture %>
+              <span class="shrink-0 text-[10px] text-muted-foreground"><%= rec.shop.prefecture.name %></span>
+            <% end %>
+          </div>
+          <% if rec.reasons.any? %>
+            <div class="flex flex-wrap gap-1">
+              <% rec.reasons.first(2).each do |reason| %>
+                <%
+                  badge_class = case reason[:type]
+                  when :high_setting then "bg-destructive/10 text-destructive"
+                  when :reset_rate then "bg-primary/10 text-primary"
+                  when :vote_volume then "bg-chart-1/10 text-chart-1"
+                  when :review_rating then "bg-secondary text-secondary-foreground"
+                  else "bg-muted text-muted-foreground"
+                  end
+                %>
+                <span class="text-[10px] font-medium px-1.5 py-0.5 rounded-full <%= badge_class %>">
+                  <%= reason[:label] %>
+                </span>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
+      <% end %>
     </div>
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-center shadow-sm">
-      <div class="w-10 h-10 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-2 text-lg font-bold">3</div>
-      <h3 class="font-semibold text-sm mb-1">みんなの結果を見る</h3>
-      <p class="text-xs text-gray-500 dark:text-gray-400">集合知でリセット率・<br>設定平均をチェック</p>
+  </section>
+<% end %>
+
+<!-- ============================================
+     Today's Data (Hot Shops + High Reset)
+     ============================================ -->
+<section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- Hot Shops -->
+    <div class="rounded-lg border border-border bg-card p-4">
+      <div class="mb-3 flex items-center gap-2">
+        <div class="h-1 w-1 rounded-full bg-destructive"></div>
+        <h2 class="text-sm font-semibold text-foreground">今日の注目店舗</h2>
+      </div>
+      <% if @hot_shops.any? %>
+        <ol class="space-y-2">
+          <% @hot_shops.each_with_index do |item, i| %>
+            <li class="flex items-center gap-2">
+              <span class="text-xs font-bold tabular-nums w-4 text-muted-foreground"><%= i + 1 %></span>
+              <%= link_to shop_path(item[:shop].slug), class: "text-sm font-medium text-primary hover:underline truncate flex-1", data: { turbo_frame: "_top" } do %>
+                <%= item[:shop].name %>
+              <% end %>
+              <span class="text-xs tabular-nums text-muted-foreground shrink-0"><%= item[:votes] %>票</span>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="text-xs text-muted-foreground py-4 text-center">今日の投票データはまだありません</p>
+      <% end %>
+    </div>
+
+    <!-- High Reset Rate -->
+    <div class="rounded-lg border border-border bg-card p-4">
+      <div class="mb-3 flex items-center gap-2">
+        <div class="h-1 w-1 rounded-full bg-primary"></div>
+        <h2 class="text-sm font-semibold text-foreground">今日リセット率が高い機種</h2>
+      </div>
+      <% if @high_reset_machines.any? %>
+        <ol class="space-y-2">
+          <% @high_reset_machines.each_with_index do |item, i| %>
+            <li class="flex items-center gap-2">
+              <span class="text-xs font-bold tabular-nums w-4 text-muted-foreground"><%= i + 1 %></span>
+              <div class="flex-1 min-w-0">
+                <%= link_to machine_path(item[:machine].slug), class: "text-sm font-medium text-primary hover:underline truncate block", data: { turbo_frame: "_top" } do %>
+                  <%= item[:machine].name %>
+                <% end %>
+                <span class="text-xs text-muted-foreground"><%= item[:shop].name %></span>
+              </div>
+              <span class="text-xs font-semibold tabular-nums text-primary shrink-0"><%= item[:rate] %>%</span>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="text-xs text-muted-foreground py-4 text-center">今日のリセットデータはまだありません</p>
+      <% end %>
     </div>
   </div>
 </section>
 
-<!-- Weekly Trend (mini chart) -->
+<!-- ============================================
+     Weekly Trend Chart
+     ============================================ -->
 <% if @trend_data&.any? { |d| d[:votes] > 0 } %>
-  <section class="mb-8">
+  <section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4">
     <%= render "shared/trend_chart",
         title: "過去7日間の全国投票推移",
         days_data: @trend_data,
@@ -117,138 +283,53 @@
   </section>
 <% end %>
 
-<!-- AI おすすめ店舗 -->
-<% if @recommendations.present? %>
-  <section class="mb-8">
-    <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-800 border border-purple-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-      <h2 class="text-sm font-bold text-gray-800 dark:text-gray-100 mb-3 border-l-4 border-purple-500 pl-2 flex items-center gap-1.5">
-        <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-        </svg>
-        今日のおすすめ店舗
-      </h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <% @recommendations.each_with_index do |rec, i| %>
-          <%= link_to shop_path(rec.shop.slug), class: "bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg p-3 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-150 block" do %>
-            <div class="flex items-start justify-between gap-2">
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold
-                  <%= case i when 0 then 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-400' when 1 then 'bg-pink-100 dark:bg-pink-900/50 text-pink-700 dark:text-pink-400' else 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400' end %>">
-                  <%= i + 1 %>
-                </span>
-                <p class="font-bold text-sm text-gray-800 dark:text-gray-100 truncate"><%= rec.shop.name %></p>
-              </div>
-              <% if rec.shop.prefecture %>
-                <span class="shrink-0 text-[10px] text-gray-400"><%= rec.shop.prefecture.name %></span>
-              <% end %>
-            </div>
-            <% if rec.reasons.any? %>
-              <div class="flex flex-wrap gap-1 mt-2">
-                <% rec.reasons.first(2).each do |reason| %>
-                  <%
-                    badge_class = case reason[:type]
-                    when :high_setting then "bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400"
-                    when :reset_rate then "bg-green-50 dark:bg-green-900/40 text-green-600 dark:text-green-400"
-                    when :vote_volume then "bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
-                    when :review_rating then "bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400"
-                    else "bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                    end
-                  %>
-                  <span class="text-[10px] font-medium px-1.5 py-0.5 rounded-full <%= badge_class %>">
-                    <%= reason[:label] %>
-                  </span>
-                <% end %>
-              </div>
-            <% end %>
-          <% end %>
-        <% end %>
+<!-- ============================================
+     Weekly Voter Ranking + Status
+     ============================================ -->
+<section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-border bg-card p-4">
+      <div class="mb-3 flex items-center gap-2">
+        <div class="h-1 w-1 rounded-full bg-secondary"></div>
+        <h2 class="text-sm font-semibold text-foreground">週間投票ランキング</h2>
       </div>
-    </div>
-  </section>
-<% end %>
-
-<!-- Today's Trending Data -->
-<section class="mb-8">
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <!-- Hot Shops -->
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-      <h2 class="text-sm font-bold text-gray-800 dark:text-gray-100 mb-3 border-l-4 border-red-500 pl-2">今日の注目店舗</h2>
-      <% if @hot_shops.any? %>
-        <ol class="space-y-2">
-          <% @hot_shops.each_with_index do |item, i| %>
-            <li class="flex items-center gap-2">
-              <span class="text-xs font-bold text-gray-400 w-4"><%= i + 1 %></span>
-              <%= link_to shop_path(item[:shop].slug), class: "text-sm font-medium text-blue-700 dark:text-blue-400 hover:underline truncate flex-1" do %>
-                <%= item[:shop].name %>
-              <% end %>
-              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0"><%= item[:votes] %>票</span>
-            </li>
-          <% end %>
-        </ol>
-      <% else %>
-        <p class="text-xs text-gray-400 py-4 text-center">今日の投票データはまだありません</p>
-      <% end %>
-    </div>
-
-    <!-- High Reset Rate -->
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-      <h2 class="text-sm font-bold text-gray-800 dark:text-gray-100 mb-3 border-l-4 border-green-500 pl-2">今日リセット率が高い機種</h2>
-      <% if @high_reset_machines.any? %>
-        <ol class="space-y-2">
-          <% @high_reset_machines.each_with_index do |item, i| %>
-            <li class="flex items-center gap-2">
-              <span class="text-xs font-bold text-gray-400 w-4"><%= i + 1 %></span>
-              <div class="flex-1 min-w-0">
-                <%= link_to machine_path(item[:machine].slug), class: "text-sm font-medium text-blue-700 dark:text-blue-400 hover:underline truncate block" do %>
-                  <%= item[:machine].name %>
-                <% end %>
-                <span class="text-xs text-gray-400"><%= item[:shop].name %></span>
-              </div>
-              <span class="text-xs font-semibold text-green-600 dark:text-green-400 shrink-0"><%= item[:rate] %>%</span>
-            </li>
-          <% end %>
-        </ol>
-      <% else %>
-        <p class="text-xs text-gray-400 py-4 text-center">今日のリセットデータはまだありません</p>
-      <% end %>
-    </div>
-  </div>
-</section>
-
-<!-- Weekly Voter Ranking -->
-<section class="mb-8">
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-      <h2 class="text-sm font-bold text-gray-800 dark:text-gray-100 mb-3 border-l-4 border-amber-500 pl-2">週間投票ランキング</h2>
       <% if @weekly_ranking.any? %>
         <ol class="space-y-2">
           <% @weekly_ranking.each do |entry| %>
             <li class="flex items-center gap-2">
-              <span class="text-xs font-bold w-4 shrink-0 <%= case entry[:rank] when 1 then 'text-amber-500' when 2 then 'text-gray-400' when 3 then 'text-amber-700' else 'text-gray-400' end %>">
+              <span class="text-xs font-bold tabular-nums w-4 shrink-0 <%= case entry[:rank] when 1 then 'text-yellow-500' when 2 then 'text-muted-foreground' when 3 then 'text-amber-700' else 'text-muted-foreground' end %>">
                 <%= entry[:rank] %>
               </span>
-              <span class="text-sm font-medium text-gray-800 dark:text-gray-200 flex-1 truncate"><%= entry[:label] %></span>
-              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0"><%= entry[:count] %>票</span>
+              <span class="text-sm font-medium text-foreground flex-1 truncate"><%= entry[:label] %></span>
+              <span class="text-xs tabular-nums text-muted-foreground shrink-0"><%= entry[:count] %>票</span>
             </li>
           <% end %>
         </ol>
       <% else %>
-        <p class="text-xs text-gray-400 py-4 text-center">今週の投票データはまだありません</p>
+        <p class="text-xs text-muted-foreground py-4 text-center">今週の投票データはまだありません</p>
       <% end %>
     </div>
 
-    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 border border-blue-200 dark:border-gray-700 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center">
-      <p class="text-3xl mb-2">🏆</p>
-      <h2 class="text-sm font-bold text-gray-800 dark:text-gray-100 mb-1">マイステータスを確認</h2>
-      <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">投票回数に応じた実績バッジを獲得しよう</p>
-      <%= link_to "ステータスを見る", voter_status_path, class: "inline-block bg-blue-700 dark:bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 dark:hover:bg-blue-500 active:scale-95 transition-all duration-150 min-h-[44px]" %>
+    <div class="rounded-lg border border-border bg-gradient-to-br from-primary/5 to-primary/10 p-4 flex flex-col items-center justify-center text-center">
+      <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-3">
+        <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path d="M12 15l-2 5-1-3-3-1 5-2zM12 15l2 5 1-3 3-1-5-2z" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 7a4 4 0 118 0 4 4 0 01-8 0z" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2 class="text-sm font-semibold text-foreground mb-1">マイステータスを確認</h2>
+      <p class="text-xs text-muted-foreground mb-4">投票回数に応じた実績バッジを獲得しよう</p>
+      <%= link_to "ステータスを見る", voter_status_path, class: "inline-flex items-center justify-center bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 active:scale-95 transition-all duration-150 min-h-[44px]" %>
     </div>
   </div>
 </section>
 
-<!-- Prefecture Grid -->
-<section class="mb-8">
-  <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">都道府県から探す</h2>
+<!-- ============================================
+     Prefecture Grid
+     ============================================ -->
+<section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4">
+  <h2 class="text-lg font-semibold tracking-tight text-foreground mb-4">都道府県から探す</h2>
+
   <%
     regions = {
       "北海道・東北" => %w[北海道 青森県 岩手県 宮城県 秋田県 山形県 福島県],
@@ -262,12 +343,15 @@
     prefectures_by_name = @prefectures.index_by(&:name)
   %>
 
-  <% regions.each_with_index do |(region_name, pref_names), index| %>
+  <% regions.each do |region_name, pref_names| %>
     <div class="mb-2" data-controller="accordion">
       <button type="button" data-action="click->accordion#toggle"
-              class="w-full flex items-center justify-between text-sm font-semibold text-gray-600 dark:text-gray-300 border-l-4 border-blue-700 dark:border-blue-500 pl-2 py-3 hover:text-gray-800 dark:hover:text-gray-100 active:bg-gray-50 dark:active:bg-gray-800 transition-all duration-150 min-h-[44px]">
-        <span><%= region_name %></span>
-        <svg data-accordion-target="icon" class="w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              class="w-full flex items-center justify-between text-sm font-semibold text-muted-foreground py-3 hover:text-foreground active:bg-secondary/50 transition-all duration-150 min-h-[44px] rounded-md px-2">
+        <div class="flex items-center gap-2">
+          <div class="h-4 w-1 rounded-full bg-primary"></div>
+          <span><%= region_name %></span>
+        </div>
+        <svg data-accordion-target="icon" class="w-4 h-4 text-muted-foreground transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
       </button>
@@ -277,14 +361,14 @@
             <% pref = prefectures_by_name[pref_name] %>
             <% if pref %>
               <%= link_to prefecture_path(pref.slug),
-                  class: "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-2.5 text-xs text-center hover:bg-blue-700 hover:text-white hover:border-blue-700 dark:hover:bg-blue-600 dark:hover:border-blue-600 active:scale-95 transition-all duration-150 min-h-[44px] flex flex-col items-center justify-center" do %>
-                <span class="block truncate"><%= pref_name %></span>
+                  class: "bg-card border border-border rounded-md px-2 py-2.5 text-xs text-center hover:bg-primary hover:text-primary-foreground hover:border-primary active:scale-95 transition-all duration-150 min-h-[44px] flex flex-col items-center justify-center" do %>
+                <span class="block truncate text-foreground"><%= pref_name %></span>
                 <% if pref.respond_to?(:shops_count) && pref.shops_count > 0 %>
-                  <span class="block text-[10px] text-gray-400"><%= pref.shops_count %>店</span>
+                  <span class="block text-[10px] text-muted-foreground"><%= pref.shops_count %>店</span>
                 <% end %>
               <% end %>
             <% else %>
-              <span class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-center text-gray-400 truncate">
+              <span class="bg-muted border border-border rounded-md px-2 py-1.5 text-xs text-center text-muted-foreground truncate">
                 <%= pref_name %>
               </span>
             <% end %>
@@ -295,47 +379,49 @@
   <% end %>
 </section>
 
-<!-- Recent Active Shops -->
-<section class="mb-8">
-  <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">最近の更新店舗</h2>
+<!-- ============================================
+     Recent Active Shops
+     ============================================ -->
+<section class="pb-16 md:pb-24 max-w-6xl mx-auto px-4">
+  <h2 class="text-lg font-semibold tracking-tight text-foreground mb-4">最近の更新店舗</h2>
   <% if @recent_shops.any? %>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <% @recent_shops.each do |shop| %>
-        <%= link_to shop_path(shop.slug), class: "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-150 block" do %>
+        <%= link_to shop_path(shop.slug), class: "group rounded-lg border border-border bg-card p-3 hover:border-primary/50 hover:bg-secondary transition-all duration-150 block", data: { turbo_frame: "_top" } do %>
           <div class="flex items-start justify-between gap-2">
-            <p class="font-medium text-sm truncate flex-1"><%= shop.name %></p>
+            <p class="font-medium text-sm text-foreground truncate flex-1 group-hover:text-primary transition-colors"><%= shop.name %></p>
             <% if shop.exchange_rate != "unknown_rate" %>
               <span class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full
                 <%= case shop.exchange_rate
-                    when 'equal_rate' then 'bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400'
-                    when 'rate_56' then 'bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
-                    when 'rate_50' then 'bg-orange-50 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400'
-                    when 'non_equal' then 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                    when 'equal_rate' then 'bg-primary/10 text-primary'
+                    when 'rate_56' then 'bg-chart-4/10 text-chart-4'
+                    when 'rate_50' then 'bg-chart-5/10 text-chart-5'
+                    when 'non_equal' then 'bg-muted text-muted-foreground'
                     end %>">
                 <%= shop.exchange_rate_display %>
               </span>
             <% end %>
           </div>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1"><%= shop.prefecture.name %></p>
+          <p class="text-xs text-muted-foreground mt-1"><%= shop.prefecture.name %></p>
           <div class="flex flex-wrap items-center gap-1 mt-1">
             <% if shop.slot_rates.present? %>
               <% shop.slot_rates.each do |rate| %>
-                <span class="bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 text-[10px] font-medium px-1.5 py-0.5 rounded-full"><%= rate %></span>
+                <span class="bg-primary/10 text-primary text-[10px] font-medium px-1.5 py-0.5 rounded-full"><%= rate %></span>
               <% end %>
             <% end %>
             <% if shop.business_hours.present? %>
-              <span class="text-[10px] text-gray-400"><%= shop.business_hours %></span>
+              <span class="text-[10px] text-muted-foreground"><%= shop.business_hours %></span>
             <% end %>
           </div>
         <% end %>
       <% end %>
     </div>
   <% else %>
-    <div class="flex flex-col items-center py-4">
-      <div class="w-16 h-16 mb-2">
-        <%= image_tag "empty_search.svg", alt: "データなし", class: "w-full h-full opacity-50" %>
-      </div>
-      <p class="text-sm text-gray-500 dark:text-gray-400">まだ店舗データがありません。</p>
+    <div class="flex flex-col items-center py-8">
+      <svg class="w-12 h-12 text-muted-foreground/40 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+        <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <p class="text-sm text-muted-foreground">まだ店舗データがありません。</p>
     </div>
   <% end %>
 </section>

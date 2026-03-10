@@ -1,17 +1,31 @@
 <% if notice %>
-  <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300 px-4 py-3 rounded-lg mb-4" data-controller="dismissable">
-    <div class="flex justify-between items-center">
-      <p class="text-sm"><%= notice %></p>
-      <button type="button" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200" data-action="click->dismissable#dismiss">&times;</button>
+  <div class="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 mb-4 animate-fade-in"
+       data-controller="dismissable">
+    <div class="shrink-0 text-primary mt-0.5">
+      <%= icon_check_circle("w-5 h-5") %>
     </div>
+    <p class="flex-1 text-sm text-foreground"><%= notice %></p>
+    <button type="button"
+            class="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-1 -m-1"
+            data-action="click->dismissable#dismiss"
+            aria-label="閉じる">
+      <%= icon_x("w-4 h-4") %>
+    </button>
   </div>
 <% end %>
 
 <% if alert %>
-  <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 px-4 py-3 rounded-lg mb-4" data-controller="dismissable">
-    <div class="flex justify-between items-center">
-      <p class="text-sm"><%= alert %></p>
-      <button type="button" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200" data-action="click->dismissable#dismiss">&times;</button>
+  <div class="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 mb-4 animate-fade-in"
+       data-controller="dismissable">
+    <div class="shrink-0 text-destructive mt-0.5">
+      <%= icon_exclamation_circle("w-5 h-5") %>
     </div>
+    <p class="flex-1 text-sm text-foreground"><%= alert %></p>
+    <button type="button"
+            class="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-1 -m-1"
+            data-action="click->dismissable#dismiss"
+            aria-label="閉じる">
+      <%= icon_x("w-4 h-4") %>
+    </button>
   </div>
 <% end %>

@@ -28,7 +28,7 @@ export default class extends Controller {
   }
 
   get currentSetting() {
-    return localStorage.getItem("theme") || "system"
+    return localStorage.getItem("theme") || "dark"
   }
 
   applyTheme() {

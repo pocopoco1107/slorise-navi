@@ -1,23 +1,97 @@
-<header class="bg-blue-800 dark:bg-gray-800 text-white shadow-md dark:shadow-gray-900/50">
-  <div class="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between">
-    <a href="/" class="text-xl font-bold tracking-tight hover:text-blue-200 transition-colors duration-150 py-2 min-h-[44px] inline-flex items-center">
-      スロリセnavi
+<header class="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-sm"
+        data-controller="mobile-nav">
+  <div class="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+    <%# === Logo === %>
+    <a href="/" class="flex items-center gap-2">
+      <div class="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
+        <span class="text-sm font-bold text-primary-foreground">S</span>
+      </div>
+      <span class="text-lg font-semibold tracking-tight text-foreground">
+        スロリセ<span class="text-primary">navi</span>
+      </span>
     </a>
-    <nav class="flex items-center gap-1 text-sm">
-      <a href="/" class="hover:text-blue-200 hover:bg-blue-700/50 dark:hover:bg-gray-700/50 transition-all duration-150 px-3 py-2 rounded-md min-h-[44px] inline-flex items-center">ホーム</a>
-      <a href="/search" class="hover:text-blue-200 hover:bg-blue-700/50 dark:hover:bg-gray-700/50 transition-all duration-150 px-3 py-2 rounded-md min-h-[44px] inline-flex items-center">検索</a>
-      <a href="/voter/status" class="hover:text-blue-200 hover:bg-blue-700/50 dark:hover:bg-gray-700/50 transition-all duration-150 px-3 py-2 rounded-md min-h-[44px] inline-flex items-center">マイ</a>
+
+    <%# === Desktop Navigation === %>
+    <nav class="hidden items-center gap-6 md:flex">
+      <%= link_to "ホーム", root_path,
+            class: "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" %>
+      <%= link_to "検索", search_path,
+            class: "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" %>
+      <%= link_to "マイ", voter_status_path,
+            class: "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" %>
+    </nav>
+
+    <%# === Right side: theme toggle + mobile menu === %>
+    <div class="flex items-center gap-1">
+      <%# Theme Toggle %>
       <div data-controller="theme">
         <button data-action="click->theme#toggle"
-                class="hover:text-blue-200 hover:bg-blue-700/50 dark:hover:bg-gray-700/50 transition-all duration-150 px-2 py-2 rounded-md min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 title="テーマ切替">
           <span data-theme-target="icon">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-            </svg>
+            <%= icon_monitor("w-4 h-4") %>
           </span>
+          <span class="sr-only">テーマを切り替え</span>
         </button>
       </div>
+
+      <%# Mobile hamburger (md以下で表示) %>
+      <button data-action="click->mobile-nav#toggle"
+              class="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden"
+              aria-label="メニューを開く">
+        <%= icon_menu("w-5 h-5") %>
+      </button>
+    </div>
+  </div>
+
+  <%# === Mobile Drawer === %>
+  <%# Overlay %>
+  <div data-mobile-nav-target="overlay"
+       data-action="click->mobile-nav#close"
+       class="fixed inset-0 z-40 bg-black/50 opacity-0 pointer-events-none transition-opacity duration-300 md:hidden">
+  </div>
+
+  <%# Drawer panel %>
+  <div data-mobile-nav-target="drawer"
+       class="fixed top-0 right-0 z-50 h-full w-64 translate-x-full bg-background border-l border-border shadow-xl transition-transform duration-300 ease-in-out md:hidden">
+    <div class="flex items-center justify-between p-4 border-b border-border">
+      <span class="text-sm font-semibold text-foreground">メニュー</span>
+      <button data-action="click->mobile-nav#close"
+              class="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              aria-label="メニューを閉じる">
+        <%= icon_x("w-5 h-5") %>
+      </button>
+    </div>
+
+    <nav class="flex flex-col gap-1 p-4">
+      <%= link_to root_path,
+            class: "flex items-center gap-3 rounded-md px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-secondary min-h-[44px]" do %>
+        <%= icon_home("w-5 h-5 text-muted-foreground") %>
+        ホーム
+      <% end %>
+      <%= link_to search_path,
+            class: "flex items-center gap-3 rounded-md px-3 py-3 text-base font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground min-h-[44px]" do %>
+        <%= icon_search("w-5 h-5 text-muted-foreground") %>
+        検索
+      <% end %>
+      <%= link_to voter_status_path,
+            class: "flex items-center gap-3 rounded-md px-3 py-3 text-base font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground min-h-[44px]" do %>
+        <%= icon_user("w-5 h-5 text-muted-foreground") %>
+        マイステータス
+      <% end %>
+
+      <div class="my-2 border-t border-border"></div>
+
+      <%= link_to new_feedback_path,
+            class: "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground min-h-[44px]" do %>
+        <%= icon_message("w-5 h-5 text-muted-foreground") %>
+        ご意見・ご要望
+      <% end %>
+      <%= link_to new_shop_request_path,
+            class: "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground min-h-[44px]" do %>
+        <%= icon_plus_circle("w-5 h-5 text-muted-foreground") %>
+        店舗追加リクエスト
+      <% end %>
     </nav>
   </div>
 </header>

@@ -9,10 +9,10 @@
       *, *::before, *::after { box-sizing: border-box; }
       * { margin: 0; }
       body {
-        background: #f9fafb;
-        color: #1f2937;
+        background: #0a0a0b;
+        color: #fafafa;
         display: grid;
-        font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+        font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
         -webkit-font-smoothing: antialiased;
         min-height: 100vh;
         place-items: center;
@@ -21,71 +21,56 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 1.5rem;
+        gap: 1.25rem;
         padding: 2rem;
         text-align: center;
         max-width: 400px;
       }
-      .illustration { width: 160px; height: 160px; }
       .code {
-        font-size: 3rem;
+        font-size: 4rem;
         font-weight: 800;
-        color: #d1d5db;
+        color: #27272a;
         line-height: 1;
+        font-variant-numeric: tabular-nums;
       }
       h1 {
         font-size: 1.25rem;
         font-weight: 700;
-        color: #374151;
+        color: #fafafa;
+        letter-spacing: -0.05em;
       }
       p {
         font-size: 0.875rem;
-        color: #6b7280;
+        color: #71717a;
         line-height: 1.6;
       }
       a {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        background: #1e40af;
-        color: #fff;
+        background: #10b981;
+        color: #0a0a0b;
         text-decoration: none;
         font-size: 0.875rem;
         font-weight: 600;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.5rem;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.375rem;
         transition: all 0.15s;
         min-height: 44px;
       }
-      a:hover { background: #3b82f6; transform: translateY(-1px); }
+      a:hover { background: #059669; }
       a:active { transform: scale(0.98); }
-      @media (prefers-color-scheme: dark) {
-        body { background: #111827; color: #f3f4f6; }
-        .code { color: #4b5563; }
-        h1 { color: #e5e7eb; }
-        p { color: #9ca3af; }
-        a { background: #2563eb; }
-        a:hover { background: #3b82f6; }
+      @media (prefers-color-scheme: light) {
+        body { background: #ffffff; color: #111827; }
+        .code { color: #e5e7eb; }
+        h1 { color: #111827; }
+        p { color: #6b7280; }
+        a { color: #ffffff; }
       }
     </style>
   </head>
   <body>
     <main>
-      <div class="illustration">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" width="160" height="160">
-          <circle cx="100" cy="95" r="60" fill="#fef2f2" stroke="#fca5a5" stroke-width="3"/>
-          <line x1="72" y1="75" x2="82" y2="85" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
-          <line x1="82" y1="75" x2="72" y2="85" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
-          <line x1="118" y1="75" x2="128" y2="85" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
-          <line x1="128" y1="75" x2="118" y2="85" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
-          <path d="M 75 115 Q 85 108, 95 115 Q 105 122, 115 115 Q 125 108, 130 112" stroke="#ef4444" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <path d="M 148 60 Q 152 50, 155 60 Q 155 66, 148 66 Q 145 66, 148 60 Z" fill="#93c5fd" opacity="0.7"/>
-          <circle cx="35" cy="50" r="3" fill="#fca5a5" opacity="0.4"/>
-          <circle cx="165" cy="45" r="2.5" fill="#fca5a5" opacity="0.3"/>
-          <text x="45" y="80" font-size="16" fill="#fca5a5" font-family="sans-serif" opacity="0.5" font-weight="bold">!</text>
-          <text x="155" y="100" font-size="14" fill="#fca5a5" font-family="sans-serif" opacity="0.4" font-weight="bold">!</text>
-        </svg>
-      </div>
       <div class="code">404</div>
       <h1>ページが見つかりません</h1>
       <p>お探しのページは存在しないか、移動した可能性があります。URLをご確認ください。</p>

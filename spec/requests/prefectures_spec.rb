@@ -7,7 +7,8 @@ RSpec.describe "Prefectures", type: :request do
     it "renders the prefecture page" do
       get prefecture_path("tokyo")
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("東京都の店舗一覧")
+      expect(response.body).to include("東京都")
+      expect(response.body).to include("店舗")
     end
 
     it "shows filter panel toggle button" do

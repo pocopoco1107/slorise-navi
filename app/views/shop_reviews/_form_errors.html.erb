@@ -1,7 +1,7 @@
 <div id="review_form_errors">
   <% if review.errors.any? %>
-    <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-3 mb-3">
-      <ul class="text-sm text-red-700 dark:text-red-400 list-disc list-inside">
+    <div class="rounded-lg border border-destructive/20 bg-destructive/5 p-3 mb-3">
+      <ul class="text-sm text-destructive list-disc list-inside">
         <% review.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
         <% end %>

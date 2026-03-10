@@ -10,6 +10,16 @@ class VotesController < ApplicationController
     merge_params = { voter_token: voter_token }
     merge_params[:reset_vote] = vote_params[:reset_vote] if vote_params.key?(:reset_vote)
     merge_params[:setting_vote] = vote_params[:setting_vote] if vote_params.key?(:setting_vote)
+    if vote_params.key?(:confirmed_setting)
+      # Toggle: if tag already exists, remove it; otherwise add it
+      tag = vote_params[:confirmed_setting]
+      current_tags = @vote.confirmed_setting || []
+      if current_tags.include?(tag)
+        merge_params[:confirmed_setting] = current_tags - [tag]
+      else
+        merge_params[:confirmed_setting] = current_tags + [tag]
+      end
+    end
     @vote.assign_attributes(vote_params.slice(:shop_id, :machine_model_id, :voted_on).merge(merge_params))
 
     if @vote.save
@@ -49,6 +59,6 @@ class VotesController < ApplicationController
   private
 
   def vote_params
-    params.require(:vote).permit(:shop_id, :machine_model_id, :voted_on, :reset_vote, :setting_vote)
+    params.require(:vote).permit(:shop_id, :machine_model_id, :voted_on, :reset_vote, :setting_vote, :confirmed_setting)
   end
 end

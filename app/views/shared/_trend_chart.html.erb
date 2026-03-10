@@ -1,0 +1,123 @@
+<%#
+  Shared trend chart partial (CSS-only, no JS libraries)
+
+  Local variables:
+    title       - String: section title
+    days_data   - Array of Hashes: [{ date:, votes:, reset_rate:, setting_avg: }, ...]
+    show_reset  - Boolean: show reset rate line (default: true)
+    show_setting - Boolean: show setting avg line (default: true)
+    compact     - Boolean: compact mode for home page (default: false)
+%>
+<% show_reset = local_assigns.fetch(:show_reset, true) %>
+<% show_setting = local_assigns.fetch(:show_setting, true) %>
+<% compact = local_assigns.fetch(:compact, false) %>
+
+<% if days_data.present? %>
+  <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 <%= compact ? '' : 'mb-6' %>">
+    <h2 class="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3 border-l-4 border-indigo-500 pl-2"><%= title %></h2>
+
+    <%# === Bar Chart: Daily Vote Count === %>
+    <div class="mb-4">
+      <p class="text-[10px] text-gray-500 dark:text-gray-400 mb-1.5">日別投票数</p>
+      <% max_votes = days_data.map { |d| d[:votes] }.max %>
+      <% max_votes = 1 if max_votes.nil? || max_votes == 0 %>
+      <div class="flex items-end gap-1 <%= compact ? 'h-16' : 'h-24' %>">
+        <% days_data.each do |day| %>
+          <div class="flex-1 flex flex-col items-center justify-end h-full">
+            <% pct = (day[:votes].to_f / max_votes * 100).round %>
+            <span class="text-[9px] font-semibold text-gray-600 dark:text-gray-300 mb-0.5"><%= day[:votes] %></span>
+            <div class="w-full rounded-t bg-indigo-500 transition-all duration-300"
+                 style="height: <%= pct > 0 ? [pct, 4].max : 0 %>%"></div>
+            <span class="text-[8px] text-gray-400 mt-1 leading-none"><%= day[:date].strftime("%-m/%-d") %></span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# === Line Chart: Reset Rate === %>
+    <% if show_reset %>
+      <div class="mb-4">
+        <p class="text-[10px] text-gray-500 dark:text-gray-400 mb-1.5">リセット率推移 (%)</p>
+        <div class="relative <%= compact ? 'h-14' : 'h-20' %>">
+          <%# Grid lines %>
+          <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+            <div class="border-b border-dashed border-gray-100 dark:border-gray-700 flex items-center">
+              <span class="text-[8px] text-gray-300 -ml-0.5">100</span>
+            </div>
+            <div class="border-b border-dashed border-gray-100 dark:border-gray-700 flex items-center">
+              <span class="text-[8px] text-gray-300 -ml-0.5">50</span>
+            </div>
+            <div></div>
+          </div>
+          <%# Data points connected by positioning %>
+          <div class="absolute inset-0 flex items-end">
+            <% days_data.each_with_index do |day, i| %>
+              <div class="flex-1 flex flex-col items-center justify-end h-full relative">
+                <% if day[:reset_rate] %>
+                  <% y_pct = day[:reset_rate] %>
+                  <div class="absolute w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-800 shadow-sm"
+                       style="bottom: <%= y_pct %>%; transform: translateY(50%)"></div>
+                  <div class="absolute text-[8px] font-semibold text-emerald-600"
+                       style="bottom: <%= [y_pct + 8, 90].min %>%; transform: translateY(50%)"><%= day[:reset_rate].round %>%</div>
+                <% else %>
+                  <div class="absolute bottom-0 text-[8px] text-gray-300" style="bottom: 0">-</div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%# === Line Chart: Setting Average === %>
+    <% if show_setting %>
+      <div>
+        <p class="text-[10px] text-gray-500 dark:text-gray-400 mb-1.5">設定平均推移</p>
+        <div class="relative <%= compact ? 'h-14' : 'h-20' %>">
+          <%# Grid lines for setting (1-6) %>
+          <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+            <div class="border-b border-dashed border-gray-100 dark:border-gray-700 flex items-center">
+              <span class="text-[8px] text-gray-300 -ml-0.5">6</span>
+            </div>
+            <div class="border-b border-dashed border-gray-100 dark:border-gray-700 flex items-center">
+              <span class="text-[8px] text-gray-300 -ml-0.5">3</span>
+            </div>
+            <div></div>
+          </div>
+          <%# Data points %>
+          <div class="absolute inset-0 flex items-end">
+            <% days_data.each do |day| %>
+              <div class="flex-1 flex flex-col items-center justify-end h-full relative">
+                <% if day[:setting_avg] %>
+                  <% y_pct = ((day[:setting_avg] - 1).to_f / 5 * 100).clamp(0, 100) %>
+                  <%
+                    dot_color = case day[:setting_avg]
+                                when 0..2 then 'bg-blue-500'
+                                when 2..4 then 'bg-amber-500'
+                                else 'bg-red-500'
+                                end
+                  %>
+                  <div class="absolute w-2.5 h-2.5 rounded-full <%= dot_color %> border-2 border-white dark:border-gray-800 shadow-sm"
+                       style="bottom: <%= y_pct %>%; transform: translateY(50%)"></div>
+                  <div class="absolute text-[8px] font-semibold text-gray-600"
+                       style="bottom: <%= [y_pct + 8, 90].min %>%; transform: translateY(50%)"><%= day[:setting_avg] %></div>
+                <% else %>
+                  <div class="absolute text-[8px] text-gray-300" style="bottom: 0">-</div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Date labels for line charts %>
+    <div class="flex mt-1">
+      <% days_data.each do |day| %>
+        <div class="flex-1 text-center">
+          <span class="text-[8px] text-gray-400"><%= day[:date].strftime("%-m/%-d") %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

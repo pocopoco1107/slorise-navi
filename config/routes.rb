@@ -8,14 +8,28 @@ Rails.application.routes.draw do
 
   resources :prefectures, only: [:show], param: :slug
   resources :shops, only: [:show], param: :slug do
+    collection do
+      get :favorites
+    end
     member do
       get "dates/:date", action: :show_date, as: :date, constraints: { date: /\d{4}-\d{2}-\d{2}/ }
     end
+    resources :shop_reviews, only: [:create], path: "reviews"
   end
-  resources :machines, only: [:show], param: :slug
+  resources :machines, only: [:show], param: :slug do
+    collection do
+      get :search
+    end
+  end
   resources :votes, only: [:create, :update]
   resources :comments, only: [:create]
   resources :reports, only: [:create]
+  resources :feedbacks, only: [:new, :create]
+  resources :shop_requests, only: [:new, :create, :show]
+
+  get "voter/status", to: "voter#status", as: :voter_status
+
+  get "search", to: "search#index"
 
   get "up" => "rails/health#show", as: :rails_health_check
 

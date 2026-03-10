@@ -2,6 +2,8 @@ ActiveAdmin.register Shop do
   permit_params :prefecture_id, :name, :address, :lat, :lng, :slug,
                 :exchange_rate, :total_machines, :slot_machines,
                 :business_hours, :holidays, :opened_on, :former_event_days, :notes,
+                :parking_spaces, :phone_number, :morning_entry, :access_info, :features,
+                :pworld_url,
                 slot_rates: []
 
   action_item :import_csv, only: :index do
@@ -20,41 +22,64 @@ ActiveAdmin.register Shop do
     end
 
     require "csv"
-    imported = 0
+    created = 0
+    updated = 0
     errors = []
+    line_num = 1
 
     CSV.foreach(file.path, headers: true, encoding: "UTF-8") do |row|
+      line_num += 1
       prefecture = Prefecture.find_by(slug: row["prefecture_slug"]) || Prefecture.find_by(name: row["prefecture_name"])
       unless prefecture
-        errors << "行#{$.}: 都道府県 '#{row['prefecture_slug'] || row['prefecture_name']}' が見つかりません"
+        errors << "行#{line_num}: 都道府県 '#{row['prefecture_slug'] || row['prefecture_name']}' が見つかりません"
+        next
+      end
+
+      unless row["name"].present?
+        errors << "行#{line_num}: 店舗名が空です"
         next
       end
 
       slug = row["slug"] || row["name"].parameterize
       shop = Shop.find_or_initialize_by(slug: slug)
-      shop.assign_attributes(
+      is_new = shop.new_record?
+
+      attrs = {
         prefecture: prefecture,
         name: row["name"],
-        address: row["address"],
-        slug: slug,
-        slot_rates: row["slot_rates"]&.split("|") || [],
-        exchange_rate: row["exchange_rate"] || "unknown_rate",
-        total_machines: row["total_machines"],
-        slot_machines: row["slot_machines"],
-        business_hours: row["business_hours"],
-        holidays: row["holidays"] || "年中無休",
-        former_event_days: row["former_event_days"],
-        notes: row["notes"]
-      )
+        slug: slug
+      }
+      # Optional fields: only overwrite if CSV value is present
+      attrs[:address] = row["address"] if row["address"].present?
+      attrs[:slot_rates] = row["slot_rates"].split("|") if row["slot_rates"].present?
+      attrs[:exchange_rate] = row["exchange_rate"] if row["exchange_rate"].present?
+      attrs[:total_machines] = row["total_machines"] if row["total_machines"].present?
+      attrs[:slot_machines] = row["slot_machines"] if row["slot_machines"].present?
+      attrs[:business_hours] = row["business_hours"] if row["business_hours"].present?
+      attrs[:holidays] = row["holidays"] if row["holidays"].present?
+      attrs[:former_event_days] = row["former_event_days"] if row["former_event_days"].present?
+      attrs[:notes] = row["notes"] if row["notes"].present?
+      attrs[:parking_spaces] = row["parking_spaces"] if row["parking_spaces"].present?
+      attrs[:phone_number] = row["phone_number"] if row["phone_number"].present?
+      attrs[:morning_entry] = row["morning_entry"] if row["morning_entry"].present?
+      attrs[:access_info] = row["access_info"] if row["access_info"].present?
+      attrs[:features] = row["features"] if row["features"].present?
+      attrs[:pworld_url] = row["pworld_url"] if row["pworld_url"].present?
+
+      # Defaults for new records
+      attrs[:exchange_rate] ||= "unknown_rate" if is_new
+      attrs[:holidays] ||= "年中無休" if is_new
+
+      shop.assign_attributes(attrs)
 
       if shop.save
-        imported += 1
+        is_new ? created += 1 : updated += 1
       else
-        errors << "行#{$.}: #{shop.name} - #{shop.errors.full_messages.join(', ')}"
+        errors << "行#{line_num}: #{row['name']} - #{shop.errors.full_messages.join(', ')}"
       end
     end
 
-    message = "#{imported}件の店舗をインポートしました"
+    message = "新規#{created}件 / 更新#{updated}件"
     message += " (#{errors.size}件のエラー: #{errors.first(3).join('; ')})" if errors.any?
     redirect_to admin_shops_path, notice: message
   end
@@ -91,6 +116,12 @@ ActiveAdmin.register Shop do
       row :opened_on
       row :former_event_days
       row :notes
+      row :parking_spaces
+      row :phone_number
+      row :morning_entry
+      row :access_info
+      row :features
+      row :pworld_url
       row :lat
       row :lng
     end
@@ -114,7 +145,13 @@ ActiveAdmin.register Shop do
       f.input :holidays, placeholder: "年中無休"
       f.input :opened_on, as: :datepicker
       f.input :former_event_days, placeholder: "毎月7日, 17日, 27日"
+      f.input :parking_spaces
+      f.input :phone_number
+      f.input :morning_entry, placeholder: "09:40 抽選受付..."
+      f.input :access_info, placeholder: "◯◯駅から徒歩5分"
+      f.input :features, as: :text, input_html: { rows: 2 }
       f.input :notes, as: :text
+      f.input :pworld_url
     end
     f.actions
   end

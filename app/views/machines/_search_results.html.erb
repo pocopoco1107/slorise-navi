@@ -1,0 +1,42 @@
+<% if machines.any? %>
+  <ul class="divide-y divide-gray-100 dark:divide-gray-700">
+    <% machines.each do |machine| %>
+      <li class="py-2">
+        <%= form_with url: votes_path, method: :post, data: { turbo_frame: "_top" }, class: "flex items-center justify-between" do |f| %>
+          <%= f.hidden_field :shop_id, value: shop_id %>
+          <%= f.hidden_field :machine_model_id, value: machine.id %>
+          <%= f.hidden_field :voted_on, value: date %>
+          <%= f.hidden_field :reset_vote, value: nil %>
+          <%= f.hidden_field :setting_vote, value: nil %>
+          <span class="text-sm font-medium"><%= machine.name %></span>
+          <div class="flex gap-1.5">
+            <button type="submit" name="vote[reset_vote]" value="1"
+                    class="bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:border-green-500 hover:text-green-600 rounded-md px-2 py-0.5 text-xs font-medium transition-colors">
+              リセYes
+            </button>
+            <button type="submit" name="vote[reset_vote]" value="0"
+                    class="bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:border-red-500 hover:text-red-600 rounded-md px-2 py-0.5 text-xs font-medium transition-colors">
+              リセNo
+            </button>
+            <% (1..6).each do |s| %>
+              <button type="submit" name="vote[setting_vote]" value="<%= s %>"
+                      class="bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md w-6 h-6 text-xs font-bold transition-colors hover:bg-setting-<%= s %> hover:text-white">
+                <%= s %>
+              </button>
+            <% end %>
+          </div>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <div class="py-4 flex flex-col items-center">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 180" fill="none" class="w-12 h-12 mb-1 opacity-40">
+      <circle cx="90" cy="75" r="35" stroke="#94a3b8" stroke-width="4" fill="#f1f5f9"/>
+      <circle cx="90" cy="75" r="28" stroke="#cbd5e1" stroke-width="1.5" fill="none" stroke-dasharray="4 3"/>
+      <line x1="116" y1="101" x2="145" y2="130" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+      <text x="90" y="85" text-anchor="middle" font-size="32" font-weight="bold" fill="#94a3b8" font-family="sans-serif">?</text>
+    </svg>
+    <p class="text-sm text-gray-400">該当する機種が見つかりません</p>
+  </div>
+<% end %>

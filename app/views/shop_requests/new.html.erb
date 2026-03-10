@@ -1,0 +1,70 @@
+<% content_for(:title) { "店舗追加リクエスト - スロリセnavi" } %>
+
+<section class="mt-4 max-w-lg mx-auto">
+  <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">店舗追加リクエスト</h1>
+
+  <% if flash[:notice] %>
+    <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-lg p-3 mb-4 text-sm" data-controller="dismissable">
+      <%= flash[:notice] %>
+      <button data-action="click->dismissable#dismiss" class="float-right text-green-400 dark:text-green-500 hover:text-green-600 dark:hover:text-green-300">&times;</button>
+    </div>
+  <% end %>
+
+  <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm">
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+      P-WORLDに掲載されていない店舗の追加をリクエストできます。<br>
+      管理者が確認後、掲載いたします。
+    </p>
+
+    <%= form_with model: @shop_request, url: shop_requests_path, class: "space-y-4" do |f| %>
+      <% if @shop_request.errors.any? %>
+        <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg p-3 text-sm">
+          <% @shop_request.errors.full_messages.each do |msg| %>
+            <p><%= msg %></p>
+          <% end %>
+        </div>
+      <% end %>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">都道府県 <span class="text-red-500">*</span></label>
+        <%= f.collection_select :prefecture_id, @prefectures, :id, :name,
+            { prompt: "選択してください" },
+            class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" %>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">店舗名 <span class="text-red-500">*</span></label>
+        <%= f.text_field :name,
+            placeholder: "例: スロットパーク新宿",
+            class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" %>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">住所</label>
+        <%= f.text_field :address,
+            placeholder: "例: 東京都新宿区歌舞伎町1-1-1",
+            class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" %>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">店舗公式サイトURL</label>
+        <%= f.url_field :url,
+            placeholder: "https://...",
+            class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" %>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">補足情報</label>
+        <%= f.text_area :note,
+            rows: 3,
+            placeholder: "店舗に関する補足があればお書きください（500文字以内）",
+            class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y" %>
+      </div>
+
+      <div>
+        <%= f.submit "リクエストを送信",
+            class: "w-full bg-blue-700 dark:bg-blue-600 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-blue-600 dark:hover:bg-blue-500 transition-colors cursor-pointer" %>
+      </div>
+    <% end %>
+  </div>
+</section>

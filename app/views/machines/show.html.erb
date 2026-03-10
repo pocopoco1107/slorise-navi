@@ -1,43 +1,232 @@
 <% content_for(:title) { "#{@machine_model.name} - スロリセnavi" } %>
 
+<%# JSON-LD structured data %>
+<% content_for(:head) do %>
+  <script type="application/ld+json">
+    <%= raw({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": @machine_model.name,
+      "description": [@machine_model.type_detail, @machine_model.payout_rate_display ? "機械割#{@machine_model.payout_rate_display}" : nil].compact.join(" / ").presence || "パチスロ機種",
+      "brand": @machine_model.maker.present? ? { "@type": "Brand", "name": @machine_model.maker } : nil,
+      "image": @machine_model.image_url.presence,
+      "category": "パチスロ",
+      "additionalProperty": [
+        @machine_model.generation_label ? { "@type": "PropertyValue", "name": "号機区分", "value": @machine_model.generation_label } : nil,
+        @machine_model.payout_rate_display ? { "@type": "PropertyValue", "name": "機械割", "value": @machine_model.payout_rate_display } : nil,
+        @machine_model.type_detail.present? ? { "@type": "PropertyValue", "name": "タイプ", "value": @machine_model.type_detail } : nil,
+        { "@type": "PropertyValue", "name": "設置店舗数", "value": @installed_shop_count.to_s }
+      ].compact
+    }.compact.to_json) %>
+  </script>
+<% end %>
+
 <section class="mt-4">
   <div class="mb-3">
-    <%= link_to "← トップに戻る", root_path, class: "text-sm text-primary hover:underline" %>
+    <%= link_to "← トップに戻る", root_path, class: "text-sm text-primary hover:underline inline-flex items-center min-h-[44px] py-2 transition-colors duration-150" %>
   </div>
 
-  <!-- Machine Info -->
-  <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-    <h1 class="text-xl font-bold text-gray-800"><%= @machine_model.name %></h1>
-    <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
-      <% if @machine_model.maker.present? %>
-        <span>メーカー: <span class="font-medium"><%= @machine_model.maker %></span></span>
+  <!-- Machine Info Card -->
+  <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6">
+    <div class="flex gap-4">
+      <%# 機種画像 (あれば) %>
+      <% if @machine_model.image_url.present? %>
+        <div class="shrink-0">
+          <img src="<%= @machine_model.image_url %>"
+               alt="<%= @machine_model.name %>"
+               loading="lazy"
+               class="w-24 h-24 sm:w-32 sm:h-32 object-contain rounded-lg bg-gray-50 dark:bg-gray-700"
+               onerror="this.parentElement.style.display='none'">
+        </div>
       <% end %>
-      <% if @machine_model.machine_type.present? %>
-        <span>タイプ: <span class="font-medium"><%= @machine_model.machine_type %></span></span>
-      <% end %>
-      <% if @machine_model.spec_type.present? %>
-        <span>スペック: <span class="font-medium"><%= @machine_model.spec_type %></span></span>
-      <% end %>
-      <% if @machine_model.released_on.present? %>
-        <span>導入日: <span class="font-medium"><%= @machine_model.released_on.strftime("%Y年%-m月%-d日") %></span></span>
-      <% end %>
+
+      <div class="flex-1 min-w-0">
+        <%# 機種名 + バッジ群 %>
+        <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100 leading-tight"><%= @machine_model.name %></h1>
+        <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full <%= @machine_model.display_type_badge_class %>">
+            <%= @machine_model.display_type_label %>
+          </span>
+          <% if @machine_model.generation_label %>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full <%= @machine_model.generation_badge_class %>">
+              <%= @machine_model.generation_label %>
+            </span>
+          <% end %>
+          <% if @machine_model.smart_slot? %>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+              スマスロ
+            </span>
+          <% elsif @machine_model.display_type != :smart_slot %>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+              メダル機
+            </span>
+          <% end %>
+        </div>
+
+        <%# スペック情報 %>
+        <div class="mt-2.5 space-y-1">
+          <% if @machine_model.payout_rate_display %>
+            <div class="flex items-center gap-1.5 text-sm">
+              <span class="text-gray-500 dark:text-gray-400">機械割:</span>
+              <span class="font-bold text-gray-800 dark:text-gray-100"><%= @machine_model.payout_rate_display %></span>
+            </div>
+          <% end %>
+          <% if @machine_model.type_detail.present? %>
+            <div class="flex items-start gap-1.5 text-sm">
+              <span class="text-gray-500 dark:text-gray-400 shrink-0">タイプ:</span>
+              <span class="font-medium text-gray-700 dark:text-gray-300"><%= @machine_model.type_detail %></span>
+            </div>
+          <% end %>
+        </div>
+
+        <%# メタ情報行 %>
+        <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+          <% if @machine_model.maker.present? %>
+            <span>メーカー: <span class="font-medium text-gray-700 dark:text-gray-300"><%= @machine_model.maker %></span></span>
+          <% end %>
+          <% if @machine_model.effective_introduced_on.present? %>
+            <span>導入日: <span class="font-medium text-gray-700 dark:text-gray-300"><%= @machine_model.effective_introduced_on.strftime("%Y年%-m月%-d日") %></span></span>
+          <% end %>
+          <span>設置店舗: <span class="font-medium text-gray-700 dark:text-gray-300"><%= @installed_shop_count %>店</span></span>
+        </div>
+      </div>
     </div>
+
+    <%# 検定番号 (折りたたみ) %>
+    <% if @machine_model.certification_number.present? %>
+      <details class="mt-3 border-t border-gray-100 dark:border-gray-700 pt-2">
+        <summary class="text-[11px] text-gray-400 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 select-none">
+          検定番号を表示
+        </summary>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-mono"><%= @machine_model.certification_number %></p>
+      </details>
+    <% end %>
   </div>
 
-  <!-- Shops with this machine -->
-  <h2 class="text-lg font-bold text-gray-800 mb-3">本日の投票状況 (<%= Date.current.strftime("%-m/%-d") %>)</h2>
+  <!-- All-time Stats -->
+  <% if @all_time_votes && @all_time_votes > 0 %>
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6">
+      <h2 class="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3 border-l-4 border-blue-500 pl-2">全期間の統計</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+          <p class="text-lg font-bold text-gray-800 dark:text-gray-100"><%= @all_time_votes %></p>
+          <p class="text-[10px] text-gray-500">総投票数</p>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+          <p class="text-lg font-bold text-gray-800 dark:text-gray-100"><%= @total_vote_days %></p>
+          <p class="text-[10px] text-gray-500">投票日数</p>
+        </div>
+        <% if @all_time_reset_rate %>
+          <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+            <p class="text-lg font-bold <%= @all_time_reset_rate >= 50 ? 'text-emerald-600' : 'text-red-500' %>"><%= @all_time_reset_rate %>%</p>
+            <p class="text-[10px] text-gray-500">リセット率</p>
+          </div>
+        <% end %>
+        <% if @all_time_setting_avg %>
+          <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+            <%
+              avg_color = case @all_time_setting_avg
+                          when 0..2 then 'text-blue-600'
+                          when 2..4 then 'text-amber-600'
+                          else 'text-red-600'
+                          end
+            %>
+            <p class="text-lg font-bold <%= avg_color %>"><%= @all_time_setting_avg %></p>
+            <p class="text-[10px] text-gray-500">平均設定</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Trend Chart -->
+  <% if @trend_data&.any? { |d| d[:votes] > 0 } %>
+    <%= render "shared/trend_chart",
+        title: "過去7日間の全国投票トレンド",
+        days_data: @trend_data %>
+  <% end %>
+
+  <!-- Trophy Rules -->
+  <% if @machine_model.trophy_rules.present? %>
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6">
+      <h2 class="text-sm font-bold text-gray-700 mb-2 border-l-4 border-purple-500 pl-2">確定演出・設定示唆</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <% @machine_model.trophy_rules.each do |演出, 設定| %>
+          <div class="bg-purple-50 dark:bg-purple-900/30 border border-purple-100 dark:border-purple-800 rounded-lg px-3 py-2 text-center">
+            <p class="text-xs text-gray-600 dark:text-gray-400"><%= 演出 %></p>
+            <p class="text-sm font-bold text-purple-700"><%= 設定 %></p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- SNS Reports -->
+  <% if @sns_reports.any? %>
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6">
+      <h2 class="text-sm font-bold text-gray-700 mb-2 border-l-4 border-blue-500 pl-2">SNS情報 (自動収集)</h2>
+      <div class="space-y-2">
+        <% @sns_reports.each do |report| %>
+          <div class="border border-gray-100 dark:border-gray-700 rounded-lg p-2.5">
+            <div class="flex items-center gap-2 mb-1">
+              <% if report.trophy_type.present? %>
+                <span class="bg-purple-100 text-purple-700 text-xs font-medium rounded-full px-2 py-0.5"><%= report.trophy_type %></span>
+              <% end %>
+              <% if report.suggested_setting.present? %>
+                <span class="bg-amber-100 text-amber-700 text-xs font-medium rounded-full px-2 py-0.5"><%= report.suggested_setting %></span>
+              <% end %>
+              <span class="text-xs text-gray-400 ml-auto"><%= report.reported_on&.strftime("%-m/%-d") %></span>
+            </div>
+            <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2"><%= report.source_title %></p>
+          </div>
+        <% end %>
+      </div>
+      <p class="text-[10px] text-gray-400 mt-2">※ RSS等から自動収集した情報です。正確性は保証しません。</p>
+    </div>
+  <% end %>
+
+  <!-- Guide Links -->
+  <% if @guide_links.any? %>
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6">
+      <h2 class="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3 border-l-4 border-emerald-500 pl-2">攻略情報</h2>
+      <div class="space-y-2">
+        <% @guide_links.group_by(&:link_type).each do |type, links| %>
+          <% links.each do |guide_link| %>
+            <a href="<%= guide_link.url %>" target="_blank" rel="noopener noreferrer"
+               class="flex items-center gap-2 border rounded-lg px-3 py-2.5 hover:shadow-md transition-shadow block <%= guide_link.link_type_badge_class %>">
+              <span class="text-base shrink-0"><%= guide_link.link_type_icon %></span>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate"><%= guide_link.title || guide_link.url %></p>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/60"><%= guide_link.link_type_label %></span>
+                  <span class="text-[10px] opacity-70"><%= guide_link.source %></span>
+                </div>
+              </div>
+              <svg class="w-4 h-4 opacity-40 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          <% end %>
+        <% end %>
+      </div>
+      <p class="text-[10px] text-gray-400 mt-2">※ 外部サイトの情報です。最新情報は各サイトでご確認ください。</p>
+    </div>
+  <% end %>
+
+  <!-- Today's Votes -->
+  <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">本日の投票状況 (<%= Date.current.strftime("%-m/%-d") %>)</h2>
 
   <% if @vote_summaries.any? %>
-    <div class="space-y-2">
+    <div class="space-y-2 mb-6">
       <% @vote_summaries.each do |vs| %>
-        <div class="bg-white border border-gray-200 rounded-lg p-3">
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
           <div class="flex items-center justify-between">
-            <%= link_to shop_path(vs.shop.slug), class: "font-medium text-sm text-primary hover:underline" do %>
+            <%= link_to shop_path(vs.shop.slug), class: "font-medium text-sm text-primary dark:text-blue-400 hover:underline" do %>
               <%= vs.shop.name %>
             <% end %>
             <span class="text-xs text-gray-400"><%= vs.total_votes %>票</span>
           </div>
-          <div class="mt-2 flex flex-wrap gap-4 text-xs text-gray-600">
+          <div class="mt-2 flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400">
             <div>
               リセット:
               <% total_reset = vs.reset_yes_count + vs.reset_no_count %>
@@ -62,14 +251,123 @@
       <% end %>
     </div>
 
-    <div class="mt-6">
+    <div class="mb-6">
       <nav class="flex justify-center">
         <%= paginate @vote_summaries %>
       </nav>
     </div>
   <% else %>
-    <div class="bg-white border border-gray-200 rounded-lg p-8 text-center">
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center mb-6">
+      <div class="w-16 h-16 mx-auto mb-2">
+        <%= image_tag "empty_search.svg", alt: "投票なし", class: "w-full h-full opacity-50" %>
+      </div>
       <p class="text-gray-500 text-sm">本日の投票データはまだありません。</p>
     </div>
   <% end %>
+
+  <!-- Installed Shops -->
+  <div class="mb-6">
+    <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">設置店舗を探す (<%= @installed_shop_count %>店)</h2>
+
+    <!-- Prefecture Filter -->
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 mb-4">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-xs text-gray-500 font-medium shrink-0">都道府県:</span>
+        <%= form_tag machine_path(@machine_model.slug), method: :get, class: "flex items-center gap-2 flex-1" do %>
+          <select name="prefecture" onchange="this.form.submit()"
+                  class="flex-1 min-w-[140px] border border-gray-200 rounded-md px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400">
+            <option value="">全国</option>
+            <% @available_prefectures.each do |pref| %>
+              <option value="<%= pref.slug %>" <%= "selected" if params[:prefecture] == pref.slug %>><%= pref.name %></option>
+            <% end %>
+          </select>
+        <% end %>
+      </div>
+    </div>
+
+    <% if @installed_shops.any? %>
+      <!-- Rate Filter (Client-side) -->
+      <div data-controller="machine-shop-filter">
+        <%
+          all_rates = @installed_shops.flat_map { |s| s.slot_rates || [] }.uniq.sort
+        %>
+        <% if all_rates.any? %>
+          <div class="flex items-center gap-2 flex-wrap mb-3">
+            <span class="text-xs text-gray-500 font-medium shrink-0">レート:</span>
+            <% all_rates.each do |rate| %>
+              <button type="button"
+                      data-machine-shop-filter-target="rateButton"
+                      data-action="click->machine-shop-filter#toggleRate"
+                      data-rate="<%= rate %>"
+                      class="bg-gray-50 text-gray-700 text-[11px] px-3 py-1.5 rounded-full border border-gray-200 hover:bg-blue-50 active:scale-95 transition-all duration-150 cursor-pointer min-h-[32px]">
+                <%= rate %>
+              </button>
+            <% end %>
+            <button type="button"
+                    data-action="click->machine-shop-filter#clearRates"
+                    class="text-[10px] text-gray-400 hover:text-gray-600 underline cursor-pointer">
+              クリア
+            </button>
+            <span data-machine-shop-filter-target="count" class="text-[10px] text-gray-400 ml-auto"></span>
+          </div>
+        <% end %>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+          <% @installed_shops.group_by { |s| s.prefecture.name }.each do |pref_name, shops| %>
+            <% shops.each do |shop| %>
+              <%= link_to shop_path(shop.slug),
+                    data: { machine_shop_filter_target: "card", rates: (shop.slot_rates || []).join(",") },
+                    class: "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-150 block min-h-[44px]" do %>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-sm font-medium text-primary dark:text-blue-400 truncate"><%= shop.name %></span>
+                  <span class="text-[10px] text-gray-400 shrink-0"><%= pref_name %></span>
+                </div>
+                <div class="flex flex-wrap items-center gap-1 mt-1.5">
+                  <% if shop.slot_rates.present? %>
+                    <% shop.slot_rates.each do |rate| %>
+                      <span class="bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 text-[10px] px-1.5 py-0.5 rounded-full"><%= rate %></span>
+                    <% end %>
+                  <% end %>
+                  <% if shop.exchange_rate != "unknown_rate" %>
+                    <span class="text-[10px] text-gray-500"><%= shop.exchange_rate_display %></span>
+                  <% end %>
+                  <% unit = @unit_counts[shop.id] %>
+                  <% if unit %>
+                    <span class="text-[10px] text-amber-600"><%= unit %>台</span>
+                  <% end %>
+                  <% if shop.notes.present? %>
+                    <%
+                      icons = []
+                      icons << "📶" if shop.notes.include?("Wi-Fi")
+                      icons << "🔌" if shop.notes.include?("充電器")
+                      icons << "🚬" if shop.notes.match?(/喫煙|たばこ/)
+                    %>
+                    <% if icons.any? %>
+                      <span class="text-[10px]"><%= icons.join(" ") %></span>
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+
+      <nav class="flex justify-center">
+        <%= paginate @installed_shops, param_name: :shops_page %>
+      </nav>
+    <% else %>
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">
+        <div class="w-16 h-16 mx-auto mb-2">
+          <%= image_tag "empty_search.svg", alt: "店舗なし", class: "w-full h-full opacity-50" %>
+        </div>
+        <% if params[:prefecture].present? %>
+          <p class="text-gray-500 text-sm">この都道府県に設置店舗はありません。</p>
+          <%= link_to "全国で表示", machine_path(@machine_model.slug), class: "text-sm text-primary hover:underline mt-2 inline-block" %>
+        <% else %>
+          <p class="text-gray-500 text-sm">設置店舗情報がありません。</p>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
 </section>

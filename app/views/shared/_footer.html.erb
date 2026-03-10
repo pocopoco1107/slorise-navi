@@ -1,5 +1,9 @@
-<footer class="bg-gray-100 border-t border-gray-200 mt-12 py-6">
-  <div class="max-w-5xl mx-auto px-4 text-center text-xs text-gray-500">
+<footer class="bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12 py-6">
+  <div class="max-w-5xl mx-auto px-4 text-center text-xs text-gray-500 dark:text-gray-400">
+    <div class="flex justify-center gap-4 mb-2">
+      <%= link_to "ご意見・ご要望", new_feedback_path, class: "hover:text-gray-700 dark:hover:text-gray-200 hover:underline py-2 px-3 -my-2 inline-flex items-center min-h-[44px] transition-colors duration-150" %>
+      <%= link_to "店舗追加リクエスト", new_shop_request_path, class: "hover:text-gray-700 dark:hover:text-gray-200 hover:underline py-2 px-3 -my-2 inline-flex items-center min-h-[44px] transition-colors duration-150" %>
+    </div>
     <p>&copy; <%= Date.current.year %> スロリセnavi. All rights reserved.</p>
     <p class="mt-1">パチスロリセット・設定判別の投票サイト</p>
   </div>

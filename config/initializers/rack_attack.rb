@@ -15,9 +15,9 @@ class Rack::Attack
     end
   end
 
-  self.throttled_responder = lambda do |matched, period, limit, req|
-    now = Time.now.utc
+  self.throttled_responder = lambda do |req|
     match_data = req.env["rack.attack.match_data"]
+    now = Time.now.utc
     headers = {
       "Content-Type" => "text/plain",
       "Retry-After" => (match_data[:period] - (now.to_i % match_data[:period])).to_s

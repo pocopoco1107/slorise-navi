@@ -13,8 +13,8 @@
   <div style="margin-top: 30px; padding: 15px; background: #f5f5f5; border-radius: 4px;">
     <h3>CSVフォーマット</h3>
     <% if resource_name == "店舗" %>
-      <p>ヘッダー行必須。以下のカラムに対応:</p>
-      <code>name, prefecture_slug, prefecture_name, address, slug, slot_rates, exchange_rate, total_machines, slot_machines, business_hours, holidays, former_event_days, notes</code>
+      <p>ヘッダー行必須。以下のカラムに対応 (slug重複時は既存レコードを更新):</p>
+      <code>name, prefecture_slug, prefecture_name, address, slug, slot_rates, exchange_rate, total_machines, slot_machines, business_hours, holidays, former_event_days, notes, parking_spaces, phone_number, morning_entry, access_info, features, pworld_url</code>
       <ul style="margin-top: 10px; font-size: 12px; color: #666;">
         <li>name (必須): 店舗名</li>
         <li>prefecture_slug or prefecture_name (必須): 都道府県</li>
@@ -23,7 +23,14 @@
         <li>slot_rates: レート ("|"区切り。例: "20スロ|5スロ")</li>
         <li>exchange_rate: unknown_rate / equal_rate / rate_56 / rate_50 / non_equal</li>
         <li>total_machines / slot_machines: 台数 (数値)</li>
+        <li>parking_spaces: 駐車場台数</li>
+        <li>phone_number: 電話番号</li>
+        <li>morning_entry: 朝入場情報</li>
+        <li>access_info: アクセス情報</li>
+        <li>features: 特徴</li>
+        <li>pworld_url: P-WORLD URL</li>
       </ul>
+      <p style="margin-top: 8px; font-size: 12px; color: #888;">空欄のカラムはスキップされます（既存値を上書きしません）</p>
     <% else %>
       <p>ヘッダー行必須。以下のカラムに対応:</p>
       <code>name, maker, machine_type, spec_type, slug, released_on</code>

@@ -336,4 +336,71 @@ SHOP_DETAILS.each do |slug, details|
 end
 puts "  Shop details updated"
 
+# -----------------------------------------------
+# 6. Shop-Machine Associations
+# -----------------------------------------------
+puts "Linking machines to shops..."
+
+active_machines = MachineModel.where(active: true)
+# Only slot machines for slot shops
+slot_machines = active_machines.where(machine_type: :slot)
+
+SHOPS.each do |shop_data|
+  shop = Shop.find_by(slug: shop_data[:slug])
+  next unless shop
+
+  # Each seed shop gets all active slot machines
+  slot_machines.each do |machine|
+    ShopMachineModel.find_or_create_by!(shop: shop, machine_model: machine)
+  end
+end
+puts "  ShopMachineModels: #{ShopMachineModel.count}"
+
+# -----------------------------------------------
+# 7. Trophy Rules (確定演出→設定マスタ)
+# -----------------------------------------------
+puts "Setting trophy rules..."
+
+TROPHY_RULES = {
+  "basilisk-kizuna2-tenzen" => {
+    "銅トロフィー" => "2以上",
+    "銀トロフィー" => "3以上",
+    "金トロフィー" => "4以上",
+    "キリン柄トロフィー" => "5以上",
+    "虹トロフィー" => "6確"
+  },
+  "smart-hokuto" => {
+    "銅トロフィー" => "2以上",
+    "銀トロフィー" => "3以上",
+    "金トロフィー" => "4以上",
+    "虹トロフィー" => "6確",
+    "エンディング" => "6確"
+  },
+  "kabaneri" => {
+    "銅エピソードバナー" => "2以上",
+    "銀エピソードバナー" => "3以上",
+    "金エピソードバナー" => "4以上",
+    "虹エピソードバナー" => "6確"
+  },
+  "banchou-zero" => {
+    "青ランプ" => "偶数確",
+    "黄ランプ" => "奇数確",
+    "緑ランプ" => "4以上",
+    "赤ランプ" => "6確"
+  },
+  "okidoki-gold" => {
+    "32G以内点灯" => "高設定示唆",
+    "ドキドキランプ" => "設定差大",
+    "レインボー" => "6確"
+  }
+}
+
+TROPHY_RULES.each do |slug, rules|
+  machine = MachineModel.find_by(slug: slug)
+  if machine
+    machine.update!(trophy_rules: rules)
+  end
+end
+puts "  Trophy rules set for #{TROPHY_RULES.size} machines"
+
 puts "=== Seeding complete ==="

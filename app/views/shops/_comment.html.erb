@@ -1,7 +1,7 @@
-<div class="bg-white border border-gray-200 rounded-lg p-3" id="<%= dom_id(comment) %>">
+<div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3" id="<%= dom_id(comment) %>">
   <div class="flex items-center justify-between mb-1">
     <div class="flex items-center gap-2">
-      <span class="text-sm font-medium text-gray-700"><%= comment.display_name %></span>
+      <span class="text-sm font-medium text-gray-700 dark:text-gray-200"><%= comment.display_name %></span>
       <span class="text-xs text-gray-400"><%= comment.created_at.strftime("%-H:%M") %></span>
     </div>
     <div id="report_flash">
@@ -11,5 +11,5 @@
       <% end %>
     </div>
   </div>
-  <p class="text-sm text-gray-700 whitespace-pre-wrap"><%= comment.body %></p>
+  <p class="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap"><%= comment.body %></p>
 </div>

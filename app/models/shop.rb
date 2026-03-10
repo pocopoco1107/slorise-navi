@@ -1,8 +1,11 @@
 class Shop < ApplicationRecord
   belongs_to :prefecture
+  has_many :shop_machine_models, dependent: :destroy
+  has_many :machine_models, through: :shop_machine_models
   has_many :votes, dependent: :destroy
   has_many :vote_summaries, dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
+  has_many :shop_reviews, dependent: :destroy
 
   # Exchange rate enum
   attribute :exchange_rate, :integer, default: 0

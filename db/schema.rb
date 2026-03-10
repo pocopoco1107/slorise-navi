@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_09_010024) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_10_100004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,33 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_010024) do
     t.index ["user_id"], name: "index_comments_on_user_id"
   end
 
+  create_table "feedbacks", force: :cascade do |t|
+    t.string "name"
+    t.string "email"
+    t.integer "category", default: 0, null: false
+    t.text "body", null: false
+    t.string "voter_token"
+    t.integer "status", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status"], name: "index_feedbacks_on_status"
+  end
+
+  create_table "machine_guide_links", force: :cascade do |t|
+    t.bigint "machine_model_id", null: false
+    t.string "url", null: false
+    t.string "title"
+    t.string "source"
+    t.integer "link_type", default: 0, null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["link_type"], name: "index_machine_guide_links_on_link_type"
+    t.index ["machine_model_id", "url"], name: "index_machine_guide_links_on_machine_model_id_and_url", unique: true
+    t.index ["machine_model_id"], name: "index_machine_guide_links_on_machine_model_id"
+    t.index ["status"], name: "index_machine_guide_links_on_status"
+  end
+
   create_table "machine_models", force: :cascade do |t|
     t.string "name", null: false
     t.string "maker"
@@ -51,6 +78,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_010024) do
     t.date "released_on"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "active", default: true, null: false
+    t.jsonb "trophy_rules", default: {}
+    t.boolean "is_smart_slot", default: false, null: false
+    t.string "generation"
+    t.decimal "payout_rate_min", precision: 4, scale: 1
+    t.decimal "payout_rate_max", precision: 4, scale: 1
+    t.date "introduced_on"
+    t.string "image_url"
+    t.string "type_detail"
+    t.integer "pworld_machine_id"
+    t.string "certification_number"
+    t.index ["active", "name"], name: "index_machine_models_on_active_and_name"
+    t.index ["active"], name: "index_machine_models_on_active"
+    t.index ["pworld_machine_id"], name: "index_machine_models_on_pworld_machine_id", unique: true, where: "(pworld_machine_id IS NOT NULL)"
     t.index ["slug"], name: "index_machine_models_on_slug", unique: true
   end
 
@@ -76,6 +117,51 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_010024) do
     t.index ["reporter_id"], name: "index_reports_on_reporter_id"
   end
 
+  create_table "shop_machine_models", force: :cascade do |t|
+    t.bigint "shop_id", null: false
+    t.bigint "machine_model_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "unit_count"
+    t.index ["machine_model_id"], name: "index_shop_machine_models_on_machine_model_id"
+    t.index ["shop_id", "machine_model_id"], name: "index_shop_machine_models_on_shop_id_and_machine_model_id", unique: true
+    t.index ["shop_id"], name: "index_shop_machine_models_on_shop_id"
+  end
+
+  create_table "shop_requests", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "prefecture_id", null: false
+    t.string "address"
+    t.string "url"
+    t.text "note"
+    t.string "voter_token", null: false
+    t.integer "status", default: 0, null: false
+    t.text "admin_note"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["prefecture_id", "name", "status"], name: "index_shop_requests_on_pref_name_status"
+    t.index ["prefecture_id"], name: "index_shop_requests_on_prefecture_id"
+    t.index ["status"], name: "index_shop_requests_on_status"
+    t.index ["voter_token"], name: "index_shop_requests_on_voter_token"
+  end
+
+  create_table "shop_reviews", force: :cascade do |t|
+    t.bigint "shop_id", null: false
+    t.string "voter_token", null: false
+    t.integer "rating", null: false
+    t.string "title"
+    t.text "body", null: false
+    t.integer "category", default: 0, null: false
+    t.string "reviewer_name", default: "名無し"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_shop_reviews_on_category"
+    t.index ["shop_id", "created_at"], name: "index_shop_reviews_on_shop_id_and_created_at"
+    t.index ["shop_id", "voter_token"], name: "index_shop_reviews_on_shop_id_and_voter_token", unique: true
+    t.index ["shop_id"], name: "index_shop_reviews_on_shop_id"
+    t.index ["voter_token"], name: "index_shop_reviews_on_voter_token"
+  end
+
   create_table "shops", force: :cascade do |t|
     t.bigint "prefecture_id", null: false
     t.string "name", null: false
@@ -94,9 +180,40 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_010024) do
     t.date "opened_on"
     t.string "former_event_days"
     t.text "notes"
+    t.string "pworld_url"
+    t.integer "parking_spaces"
+    t.string "phone_number"
+    t.string "morning_entry"
+    t.string "access_info"
+    t.string "features"
+    t.index ["exchange_rate"], name: "index_shops_on_exchange_rate"
+    t.index ["prefecture_id", "name"], name: "index_shops_on_prefecture_id_and_name"
     t.index ["prefecture_id"], name: "index_shops_on_prefecture_id"
     t.index ["slot_rates"], name: "index_shops_on_slot_rates", using: :gin
     t.index ["slug"], name: "index_shops_on_slug", unique: true
+  end
+
+  create_table "sns_reports", force: :cascade do |t|
+    t.bigint "machine_model_id"
+    t.bigint "shop_id"
+    t.string "source", null: false
+    t.string "source_url"
+    t.string "source_title"
+    t.text "raw_text"
+    t.jsonb "structured_data", default: {}
+    t.string "trophy_type"
+    t.string "suggested_setting"
+    t.integer "confidence", default: 0
+    t.integer "status", default: 0
+    t.date "reported_on"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["machine_model_id", "reported_on"], name: "index_sns_reports_on_machine_model_id_and_reported_on"
+    t.index ["machine_model_id"], name: "index_sns_reports_on_machine_model_id"
+    t.index ["shop_id"], name: "index_sns_reports_on_shop_id"
+    t.index ["source"], name: "index_sns_reports_on_source"
+    t.index ["source_url"], name: "index_sns_reports_on_source_url", unique: true, where: "(source_url IS NOT NULL)"
+    t.index ["status"], name: "index_sns_reports_on_status"
   end
 
   create_table "users", force: :cascade do |t|
@@ -126,9 +243,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_010024) do
     t.jsonb "setting_distribution", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "confirmed_setting_counts", default: {}
+    t.index ["machine_model_id", "target_date"], name: "index_vote_summaries_on_machine_model_target_date"
     t.index ["machine_model_id"], name: "index_vote_summaries_on_machine_model_id"
     t.index ["shop_id", "machine_model_id", "target_date"], name: "index_vote_summaries_unique_shop_machine_date", unique: true
     t.index ["shop_id"], name: "index_vote_summaries_on_shop_id"
+    t.index ["target_date", "shop_id"], name: "index_vote_summaries_on_target_date_and_shop"
+    t.index ["target_date"], name: "index_vote_summaries_on_target_date"
   end
 
   create_table "votes", force: :cascade do |t|
@@ -141,15 +262,25 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_010024) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "voter_token"
+    t.string "confirmed_setting", default: [], array: true
+    t.index ["confirmed_setting"], name: "index_votes_on_confirmed_setting", using: :gin
     t.index ["machine_model_id"], name: "index_votes_on_machine_model_id"
     t.index ["shop_id", "machine_model_id", "voted_on"], name: "index_votes_for_aggregation"
     t.index ["shop_id"], name: "index_votes_on_shop_id"
     t.index ["user_id"], name: "index_votes_on_user_id"
+    t.index ["voted_on"], name: "index_votes_on_voted_on"
     t.index ["voter_token", "shop_id", "machine_model_id", "voted_on"], name: "idx_votes_unique_per_voter", unique: true
     t.index ["voter_token"], name: "index_votes_on_voter_token"
   end
 
+  add_foreign_key "machine_guide_links", "machine_models"
+  add_foreign_key "shop_machine_models", "machine_models"
+  add_foreign_key "shop_machine_models", "shops"
+  add_foreign_key "shop_requests", "prefectures"
+  add_foreign_key "shop_reviews", "shops"
   add_foreign_key "shops", "prefectures"
+  add_foreign_key "sns_reports", "machine_models"
+  add_foreign_key "sns_reports", "shops"
   add_foreign_key "vote_summaries", "machine_models"
   add_foreign_key "vote_summaries", "shops"
   add_foreign_key "votes", "machine_models"

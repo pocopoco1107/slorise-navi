@@ -1,0 +1,70 @@
+<% content_for(:title) { "店舗追加リクエスト ##{@shop_request.id} - スロリセnavi" } %>
+
+<section class="mt-4 max-w-lg mx-auto">
+  <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">店舗追加リクエスト #<%= @shop_request.id %></h1>
+
+  <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm">
+    <dl class="space-y-3 text-sm">
+      <div>
+        <dt class="font-medium text-gray-500 dark:text-gray-400">ステータス</dt>
+        <dd class="mt-0.5">
+          <% case @shop_request.status %>
+          <% when "pending" %>
+            <span class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">審査待ち</span>
+          <% when "approved" %>
+            <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">承認済み</span>
+          <% when "rejected" %>
+            <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">却下</span>
+          <% end %>
+        </dd>
+      </div>
+
+      <div>
+        <dt class="font-medium text-gray-500 dark:text-gray-400">都道府県</dt>
+        <dd class="mt-0.5 text-gray-800 dark:text-gray-200"><%= @shop_request.prefecture.name %></dd>
+      </div>
+
+      <div>
+        <dt class="font-medium text-gray-500 dark:text-gray-400">店舗名</dt>
+        <dd class="mt-0.5 text-gray-800 dark:text-gray-200"><%= @shop_request.name %></dd>
+      </div>
+
+      <% if @shop_request.address.present? %>
+        <div>
+          <dt class="font-medium text-gray-500 dark:text-gray-400">住所</dt>
+          <dd class="mt-0.5 text-gray-800 dark:text-gray-200"><%= @shop_request.address %></dd>
+        </div>
+      <% end %>
+
+      <% if @shop_request.url.present? %>
+        <div>
+          <dt class="font-medium text-gray-500 dark:text-gray-400">公式サイト</dt>
+          <dd class="mt-0.5"><%= link_to @shop_request.url, @shop_request.url, target: "_blank", rel: "noopener", class: "text-blue-600 dark:text-blue-400 hover:underline break-all" %></dd>
+        </div>
+      <% end %>
+
+      <% if @shop_request.note.present? %>
+        <div>
+          <dt class="font-medium text-gray-500 dark:text-gray-400">補足情報</dt>
+          <dd class="mt-0.5 text-gray-800"><%= simple_format(@shop_request.note) %></dd>
+        </div>
+      <% end %>
+
+      <div>
+        <dt class="font-medium text-gray-500 dark:text-gray-400">申請日時</dt>
+        <dd class="mt-0.5 text-gray-800"><%= l(@shop_request.created_at, format: :long) rescue @shop_request.created_at.strftime("%Y年%m月%d日 %H:%M") %></dd>
+      </div>
+
+      <% if @shop_request.rejected? && @shop_request.admin_note.present? %>
+        <div>
+          <dt class="font-medium text-gray-500 dark:text-gray-400">管理者メモ</dt>
+          <dd class="mt-0.5 text-red-700"><%= @shop_request.admin_note %></dd>
+        </div>
+      <% end %>
+    </dl>
+  </div>
+
+  <div class="mt-4 text-center">
+    <%= link_to "新しいリクエストを送信", new_shop_request_path, class: "text-sm text-blue-600 dark:text-blue-400 hover:underline" %>
+  </div>
+</section>

@@ -4,8 +4,11 @@
     <%= display_meta_tags site: "スロリセnavi", reverse: true, separator: "|" %>
     <link rel="canonical" href="<%= canonical_url %>">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="theme-color" content="#1e40af">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/manifest.json">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -13,13 +16,13 @@
 
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192.svg">
 
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+  <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200">
     <%= render "shared/header" %>
 
     <main class="flex-1 w-full max-w-5xl mx-auto px-4 pt-4 pb-8">
@@ -28,5 +31,18 @@
     </main>
 
     <%= render "shared/footer" %>
+
+    <script>
+      // FOUC防止: ページ読み込み前にダークモードを適用
+      (function() {
+        var theme = localStorage.getItem("theme") || "system";
+        var isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (isDark) document.documentElement.classList.add("dark");
+      })();
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/service-worker.js");
+      }
+    </script>
   </body>
 </html>

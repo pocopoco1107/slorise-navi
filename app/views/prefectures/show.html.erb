@@ -2,38 +2,552 @@
 
 <section class="mt-4">
   <div class="mb-4">
-    <%= link_to "← トップに戻る", root_path, class: "text-sm text-primary hover:underline" %>
+    <%= link_to "← トップに戻る", root_path, class: "text-sm text-primary hover:underline inline-flex items-center min-h-[44px] py-2 transition-colors duration-150" %>
   </div>
 
-  <h1 class="text-xl font-bold text-gray-800 mb-4"><%= @prefecture.name %>の店舗一覧</h1>
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100"><%= @prefecture.name %>の店舗一覧</h1>
+    <span class="text-sm text-gray-500 dark:text-gray-400"><%= @total_shops_count %>店舗</span>
+  </div>
 
-  <% if @shops.any? %>
-    <div class="space-y-2">
-      <% @shops.each do |shop| %>
-        <%= link_to shop_path(shop.slug), class: "bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow block" do %>
-          <p class="font-medium"><%= shop.name %></p>
-          <% if shop.slot_rates.present? %>
-            <div class="flex gap-1 mt-1">
-              <% shop.slot_rates.each do |rate| %>
-                <span class="inline-block bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 rounded"><%= rate %></span>
-              <% end %>
-            </div>
-          <% end %>
-          <% if shop.address.present? %>
-            <p class="text-sm text-gray-500 mt-1"><%= shop.address %></p>
+  <!-- Wrap stats + filter + list in one controller scope for stat-to-filter linking -->
+  <div data-controller="shop-filter machine-filter">
+
+  <!-- Prefecture Statistics -->
+  <% if @total_shops_count > 0 %>
+    <%
+      top_exchange = @exchange_rate_stats.first
+      top_rate = @slot_rate_stats.first
+      top_opening = @opening_hours_stats.max_by { |_, v| v }
+      top_closing = @closing_hours_stats.max_by { |_, v| v }
+      # 表示する設備のみ (ユーザーにとって意味のあるもの)
+      display_facilities = @facility_stats.select { |f, _|
+        %w[Wi-Fi 充電器 屋内喫煙室 加熱式たばこ遊技OK 加熱式たばこ喫煙室 加熱式たばこ 出玉公開].include?(f)
+      }
+      # 換金率の表示→内部値マッピング
+      exchange_display_to_value = { "等価" => "equal_rate", "5.6枚交換" => "rate_56", "5.0枚交換" => "rate_50", "非等価" => "non_equal" }
+    %>
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 border border-blue-200 dark:border-gray-700 rounded-xl p-4 mb-6 cursor-pointer hover:shadow-md transition-shadow"
+         data-controller="accordion" data-action="click->accordion#toggle">
+      <%# サマリー行: 常に表示 %>
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <% if top_exchange %>
+          <button type="button"
+                  data-action="click->shop-filter#applyPreset"
+                  data-preset-category="exchange"
+                  data-preset-value="<%= exchange_display_to_value[top_exchange[0]] %>"
+                  class="bg-white dark:bg-gray-800 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 font-bold rounded-full px-2.5 py-1 hover:bg-emerald-50 hover:border-emerald-300 transition-colors">
+            <%= top_exchange[0] %> <%= (top_exchange[1] * 100.0 / @total_shops_count).round %>%
+          </button>
+        <% end %>
+        <% if top_rate %>
+          <button type="button"
+                  data-action="click->shop-filter#applyPreset"
+                  data-preset-category="rates"
+                  data-preset-value="<%= top_rate[0] %>"
+                  class="bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-400 font-bold rounded-full px-2.5 py-1 hover:bg-blue-50 hover:border-blue-300 transition-colors">
+            <%= top_rate[0] %> <%= (top_rate[1] * 100.0 / @total_shops_count).round %>%
+          </button>
+        <% end %>
+        <% if top_opening %>
+          <%
+            opening_filter_value = top_opening[0].match(/\A(\d{1,2}):/)[1] rescue nil
+          %>
+          <% if opening_filter_value %>
+            <button type="button"
+                    data-action="click->shop-filter#applyPreset"
+                    data-preset-category="hours"
+                    data-preset-value="<%= opening_filter_value %>"
+                    class="bg-white dark:bg-gray-800 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 font-bold rounded-full px-2.5 py-1 hover:bg-amber-50 hover:border-amber-300 transition-colors">
+              開店 <%= top_opening[0] %> <%= (top_opening[1] * 100.0 / @total_shops_count).round %>%
+            </button>
           <% end %>
         <% end %>
-      <% end %>
-    </div>
+        <% if top_closing %>
+          <span class="bg-white dark:bg-gray-800 border border-rose-200 dark:border-rose-700 text-rose-700 dark:text-rose-400 font-bold rounded-full px-2.5 py-1">
+            閉店 <%= top_closing[0] %> <%= (top_closing[1] * 100.0 / @total_shops_count).round %>%
+          </span>
+        <% end %>
+        <% display_facilities.first(2).each do |facility, count| %>
+          <%
+            # 設備のフィルタ値を決定
+            facility_filter_value = %w[Wi-Fi 充電器 加熱式たばこ遊技OK].include?(facility) ? facility : nil
+          %>
+          <% if facility_filter_value %>
+            <button type="button"
+                    data-action="click->shop-filter#applyPreset"
+                    data-preset-category="facilities"
+                    data-preset-value="<%= facility_filter_value %>"
+                    class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 rounded-full px-2.5 py-1 hover:bg-gray-50 hover:border-gray-300 transition-colors">
+              <%= facility %> <%= (count * 100.0 / @total_shops_count).round %>%
+            </button>
+          <% else %>
+            <span class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 rounded-full px-2.5 py-1">
+              <%= facility %> <%= (count * 100.0 / @total_shops_count).round %>%
+            </span>
+          <% end %>
+        <% end %>
+        <svg data-accordion-target="icon" class="w-4 h-4 text-blue-400 transition-transform duration-200 ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </div>
 
-    <div class="mt-6">
-      <nav class="flex justify-center">
-        <%= paginate @shops %>
-      </nav>
-    </div>
-  <% else %>
-    <div class="bg-white border border-gray-200 rounded-lg p-8 text-center">
-      <p class="text-gray-500">この都道府県にはまだ店舗が登録されていません。</p>
+      <%# 詳細: 展開時のみ表示 %>
+      <div data-accordion-target="content" class="hidden mt-4 pt-3 border-t border-blue-200 dark:border-gray-600">
+        <p class="text-[10px] text-blue-500 dark:text-blue-400 mb-3">各項目をクリックすると店舗を絞り込めます</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+          <% if @exchange_rate_stats.any? %>
+            <div>
+              <h3 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">換金率</h3>
+              <div class="space-y-1.5">
+                <% @exchange_rate_stats.each do |label, count| %>
+                  <% pct = (count * 100.0 / @total_shops_count).round(1) %>
+                  <button type="button"
+                          data-action="click->shop-filter#applyPreset"
+                          data-preset-category="exchange"
+                          data-preset-value="<%= exchange_display_to_value[label] %>"
+                          class="w-full flex items-center gap-2 rounded-md px-1 py-0.5 -mx-1 hover:bg-emerald-50 transition-colors cursor-pointer group"
+                          data-stat-filter>
+                    <span class="text-xs text-gray-700 dark:text-gray-300 w-16 shrink-0 group-hover:text-emerald-700 group-hover:font-semibold transition-colors"><%= label %></span>
+                    <div class="flex-1 h-2 bg-white dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div class="bg-emerald-400 h-full rounded-full" style="width: <%= pct %>%"></div>
+                    </div>
+                    <span class="text-[10px] text-gray-500 w-14 text-right shrink-0"><%= count %>店 (<%= pct %>%)</span>
+                  </button>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <% if @slot_rate_stats.any? %>
+            <div>
+              <h3 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">スロットレート</h3>
+              <div class="space-y-1.5">
+                <% @slot_rate_stats.each do |rate, count| %>
+                  <% pct = (count * 100.0 / @total_shops_count).round(1) %>
+                  <button type="button"
+                          data-action="click->shop-filter#applyPreset"
+                          data-preset-category="rates"
+                          data-preset-value="<%= rate %>"
+                          class="w-full flex items-center gap-2 rounded-md px-1 py-0.5 -mx-1 hover:bg-blue-50 transition-colors cursor-pointer group"
+                          data-stat-filter>
+                    <span class="text-xs text-gray-700 dark:text-gray-300 w-16 shrink-0 group-hover:text-blue-700 group-hover:font-semibold transition-colors"><%= rate %></span>
+                    <div class="flex-1 h-2 bg-white dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div class="bg-blue-400 h-full rounded-full" style="width: <%= pct %>%"></div>
+                    </div>
+                    <span class="text-[10px] text-gray-500 w-14 text-right shrink-0"><%= count %>店 (<%= pct %>%)</span>
+                  </button>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <% if display_facilities.any? %>
+            <div>
+              <h3 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">設備</h3>
+              <div class="space-y-1.5">
+                <% display_facilities.each do |facility, count| %>
+                  <% pct = (count * 100.0 / @total_shops_count).round(1) %>
+                  <%
+                    # フィルタ対応している設備のみクリッカブル
+                    filterable_facility = %w[Wi-Fi 充電器 加熱式たばこ遊技OK].include?(facility)
+                    facility_value = facility == "parking" ? "parking" : facility
+                  %>
+                  <% if filterable_facility %>
+                    <button type="button"
+                            data-action="click->shop-filter#applyPreset"
+                            data-preset-category="facilities"
+                            data-preset-value="<%= facility_value %>"
+                            class="w-full flex items-center gap-2 rounded-md px-1 py-0.5 -mx-1 hover:bg-purple-50 transition-colors cursor-pointer group"
+                            data-stat-filter>
+                      <span class="text-xs text-gray-700 dark:text-gray-300 w-24 shrink-0 truncate group-hover:text-purple-700 group-hover:font-semibold transition-colors"><%= facility %></span>
+                      <div class="flex-1 h-2 bg-white dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div class="bg-purple-400 h-full rounded-full" style="width: <%= pct %>%"></div>
+                      </div>
+                      <span class="text-[10px] text-gray-500 w-14 text-right shrink-0"><%= pct %>%</span>
+                    </button>
+                  <% else %>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-gray-700 dark:text-gray-300 w-24 shrink-0 truncate"><%= facility %></span>
+                      <div class="flex-1 h-2 bg-white dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div class="bg-purple-400 h-full rounded-full" style="width: <%= pct %>%"></div>
+                      </div>
+                      <span class="text-[10px] text-gray-500 w-14 text-right shrink-0"><%= pct %>%</span>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <% if @opening_hours_stats.any? %>
+            <div>
+              <h3 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">開店時間</h3>
+              <div class="space-y-1.5">
+                <% @opening_hours_stats.each do |hour, count| %>
+                  <% pct = (count * 100.0 / @total_shops_count).round(1) %>
+                  <%
+                    hour_filter_value = hour.match(/\A(\d{1,2}):/)[1] rescue nil
+                  %>
+                  <% if hour_filter_value && %w[9 10].include?(hour_filter_value) %>
+                    <button type="button"
+                            data-action="click->shop-filter#applyPreset"
+                            data-preset-category="hours"
+                            data-preset-value="<%= hour_filter_value %>"
+                            class="w-full flex items-center gap-2 rounded-md px-1 py-0.5 -mx-1 hover:bg-amber-50 transition-colors cursor-pointer group"
+                            data-stat-filter>
+                      <span class="text-xs text-gray-700 dark:text-gray-300 w-16 shrink-0 group-hover:text-amber-700 group-hover:font-semibold transition-colors"><%= hour %></span>
+                      <div class="flex-1 h-2 bg-white dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div class="bg-amber-400 h-full rounded-full" style="width: <%= pct %>%"></div>
+                      </div>
+                      <span class="text-[10px] text-gray-500 w-14 text-right shrink-0"><%= count %>店 (<%= pct %>%)</span>
+                    </button>
+                  <% else %>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-gray-700 dark:text-gray-300 w-16 shrink-0"><%= hour %></span>
+                      <div class="flex-1 h-2 bg-white dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div class="bg-amber-400 h-full rounded-full" style="width: <%= pct %>%"></div>
+                      </div>
+                      <span class="text-[10px] text-gray-500 w-14 text-right shrink-0"><%= count %>店 (<%= pct %>%)</span>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <% if @closing_hours_stats.any? %>
+            <div>
+              <h3 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">閉店時間</h3>
+              <div class="space-y-1.5">
+                <% @closing_hours_stats.each do |hour, count| %>
+                  <% pct = (count * 100.0 / @total_shops_count).round(1) %>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-700 dark:text-gray-300 w-16 shrink-0"><%= hour %></span>
+                    <div class="flex-1 h-2 bg-white dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div class="bg-rose-400 h-full rounded-full" style="width: <%= pct %>%"></div>
+                    </div>
+                    <span class="text-[10px] text-gray-500 w-14 text-right shrink-0"><%= count %>店 (<%= pct %>%)</span>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <%# 駐車場・朝入場 %>
+          <div>
+            <h3 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">その他</h3>
+            <div class="space-y-1.5">
+              <% if @parking_stats[:total] > 0 %>
+                <button type="button"
+                        data-action="click->shop-filter#applyPreset"
+                        data-preset-category="facilities"
+                        data-preset-value="parking"
+                        class="w-full flex items-center justify-between text-xs rounded-md px-1 py-0.5 -mx-1 hover:bg-purple-50 transition-colors cursor-pointer group"
+                        data-stat-filter>
+                  <span class="text-gray-700 group-hover:text-purple-700 group-hover:font-semibold transition-colors">🅿️ 駐車場あり</span>
+                  <span class="text-gray-500"><%= @parking_stats[:total] %>店 / 平均<%= @parking_stats[:avg] %>台 / 最大<%= @parking_stats[:max] %>台</span>
+                </button>
+              <% end %>
+              <% if @morning_entry_count > 0 %>
+                <button type="button"
+                        data-action="click->shop-filter#applyPreset"
+                        data-preset-category="morning"
+                        data-preset-value="yes"
+                        class="w-full flex items-center justify-between text-xs rounded-md px-1 py-0.5 -mx-1 hover:bg-amber-50 transition-colors cursor-pointer group"
+                        data-stat-filter>
+                  <span class="text-gray-700 group-hover:text-amber-700 group-hover:font-semibold transition-colors">🌅 朝の入場ルールあり</span>
+                  <span class="text-gray-500"><%= @morning_entry_count %>店</span>
+                </button>
+              <% end %>
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
   <% end %>
+
+  <!-- おすすめ店舗 -->
+  <% if @recommendations.present? %>
+    <div class="mb-6">
+      <h2 class="text-sm font-bold text-gray-800 dark:text-gray-100 mb-3 border-l-4 border-purple-500 pl-2 flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+        おすすめ店舗
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <% @recommendations.each_with_index do |rec, i| %>
+          <%= link_to shop_path(rec.shop.slug), class: "bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-800 border border-purple-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-150 block" do %>
+            <div class="flex items-center gap-2">
+              <span class="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold
+                <%= case i when 0 then 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-400' when 1 then 'bg-pink-100 dark:bg-pink-900/50 text-pink-700 dark:text-pink-400' else 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400' end %>">
+                <%= i + 1 %>
+              </span>
+              <p class="font-bold text-sm text-gray-800 dark:text-gray-100 truncate"><%= rec.shop.name %></p>
+            </div>
+            <% if rec.reasons.any? %>
+              <div class="flex flex-wrap gap-1 mt-1.5 ml-7">
+                <% rec.reasons.first(2).each do |reason| %>
+                  <%
+                    badge_class = case reason[:type]
+                    when :high_setting then "bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400"
+                    when :reset_rate then "bg-green-50 dark:bg-green-900/40 text-green-600 dark:text-green-400"
+                    when :vote_volume then "bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
+                    when :review_rating then "bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400"
+                    else "bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                    end
+                  %>
+                  <span class="text-[10px] font-medium px-1.5 py-0.5 rounded-full <%= badge_class %>">
+                    <%= reason[:label] %>
+                  </span>
+                <% end %>
+              </div>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Shop Filter + List -->
+    <%# 店舗名検索 %>
+    <input type="text"
+           data-action="input->machine-filter#filter"
+           data-machine-filter-target="input"
+           placeholder="店舗名で絞り込み..."
+           class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm dark:shadow-none dark:placeholder-gray-400">
+
+    <%# フィルタパネル %>
+    <div class="mt-3 mb-4">
+      <div class="flex items-center justify-between">
+        <button type="button"
+                data-action="click->shop-filter#toggle"
+                class="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary-light font-medium transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+          </svg>
+          <span data-shop-filter-target="toggleText">絞り込み</span>
+          <svg data-shop-filter-target="toggleIcon" class="w-3.5 h-3.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+        <span data-filter-counter class="text-xs text-gray-500">
+          <span data-shop-filter-target="count">0</span>件 / 全<span data-shop-filter-target="total">0</span>件
+        </span>
+      </div>
+
+      <div data-shop-filter-target="panel" class="hidden mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <%# 換金率 %>
+          <div>
+            <h4 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">換金率</h4>
+            <div class="space-y-1.5">
+              <% [["equal_rate", "等価"], ["rate_56", "5.6枚交換"], ["rate_50", "5.0枚交換"], ["non_equal", "非等価"]].each do |value, label| %>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                  <input type="checkbox" value="<%= value %>"
+                         data-filter-category="exchange"
+                         data-shop-filter-target="checkbox"
+                         data-action="change->shop-filter#apply"
+                         class="rounded border-gray-300 text-primary focus:ring-primary">
+                  <span class="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100"><%= label %></span>
+                </label>
+              <% end %>
+            </div>
+          </div>
+
+          <%# レート %>
+          <div>
+            <h4 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">レート</h4>
+            <div class="space-y-1.5">
+              <% %w[20スロ 5スロ 2スロ 1スロ].each do |rate| %>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                  <input type="checkbox" value="<%= rate %>"
+                         data-filter-category="rates"
+                         data-shop-filter-target="checkbox"
+                         data-action="change->shop-filter#apply"
+                         class="rounded border-gray-300 text-primary focus:ring-primary">
+                  <span class="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100"><%= rate %></span>
+                </label>
+              <% end %>
+            </div>
+          </div>
+
+          <%# 設備 %>
+          <div>
+            <h4 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">設備</h4>
+            <div class="space-y-1.5">
+              <% [["加熱式たばこ遊技OK", "加熱式たばこ遊技OK"], ["Wi-Fi", "Wi-Fi"], ["充電器", "充電器"], ["parking", "駐車場あり"]].each do |value, label| %>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                  <input type="checkbox" value="<%= value %>"
+                         data-filter-category="facilities"
+                         data-shop-filter-target="checkbox"
+                         data-action="change->shop-filter#apply"
+                         class="rounded border-gray-300 text-primary focus:ring-primary">
+                  <span class="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100"><%= label %></span>
+                </label>
+              <% end %>
+            </div>
+          </div>
+
+          <%# 開店時間 %>
+          <div>
+            <h4 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">開店時間</h4>
+            <div class="space-y-1.5">
+              <% [["9", "9時台"], ["10", "10時台"]].each do |value, label| %>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                  <input type="checkbox" value="<%= value %>"
+                         data-filter-category="hours"
+                         data-shop-filter-target="checkbox"
+                         data-action="change->shop-filter#apply"
+                         class="rounded border-gray-300 text-primary focus:ring-primary">
+                  <span class="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100"><%= label %></span>
+                </label>
+              <% end %>
+            </div>
+          </div>
+
+          <%# 朝入場ルール %>
+          <div>
+            <h4 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">朝入場ルール</h4>
+            <div class="space-y-1.5">
+              <label class="flex items-center gap-2 cursor-pointer group">
+                <input type="checkbox" value="yes"
+                       data-filter-category="morning"
+                       data-shop-filter-target="checkbox"
+                       data-action="change->shop-filter#apply"
+                       class="rounded border-gray-300 text-primary focus:ring-primary">
+                <span class="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100">ルールあり</span>
+              </label>
+            </div>
+          </div>
+
+        </div>
+
+        <%# クリアボタン %>
+        <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+          <button type="button"
+                  data-action="click->shop-filter#clear"
+                  class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline underline-offset-2">
+            フィルタをクリア
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <%# 店舗一覧 %>
+    <% if @grouped_shops.any? %>
+      <div data-machine-filter-target="list" class="space-y-3">
+        <% @grouped_shops.each_with_index do |(city, shops), idx| %>
+          <%
+            # 店舗のフィルタ用データを準備するヘルパー
+          %>
+          <div data-controller="accordion" data-city-group>
+            <button type="button" data-action="click->accordion#toggle"
+                    class="w-full flex items-center justify-between bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 transition-all duration-150 min-h-[44px]">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-gray-800 dark:text-gray-100"><%= city %></span>
+                <span data-city-count class="text-[11px] text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-full px-2 py-0.5"><%= shops.size %>店</span>
+              </div>
+              <svg data-accordion-target="icon" class="w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div data-accordion-target="content" class="hidden mt-2">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                <% shops.each do |shop| %>
+                  <%
+                    # フィルタ用データ属性を構築
+                    facilities = shop.notes.present? ? shop.notes.split("、").map(&:strip) : []
+                    if shop.parking_spaces.present? && shop.parking_spaces > 0
+                      facilities << "parking"
+                    end
+                    opening_hour = ""
+                    if shop.business_hours.present?
+                      parts = shop.business_hours.split(/[〜～]/).map(&:strip)
+                      if (m = parts[0]&.match(/\A(\d{1,2}):\d{2}\z/))
+                        opening_hour = m[1]
+                      end
+                    end
+                  %>
+                  <%= link_to shop_path(shop.slug),
+                      class: "bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-150 block h-full",
+                      data: {
+                        filter_name: shop.name.downcase,
+                        shop_card: true,
+                        filter_exchange: shop.exchange_rate,
+                        filter_rates: shop.slot_rates.present? ? shop.slot_rates.join(",") : "",
+                        filter_facilities: facilities.join(","),
+                        filter_hours: opening_hour,
+                        filter_morning: shop.morning_entry.present? ? "yes" : "no"
+                      } do %>
+                    <div class="flex items-start justify-between gap-2">
+                      <p class="font-bold text-sm text-gray-800 dark:text-gray-100 truncate flex-1"><%= shop.name %></p>
+                      <% if shop.exchange_rate != "unknown_rate" %>
+                        <span class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full
+                          <%= case shop.exchange_rate
+                              when 'equal_rate' then 'bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400'
+                              when 'rate_56' then 'bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
+                              when 'rate_50' then 'bg-orange-50 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400'
+                              when 'non_equal' then 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                              end %>">
+                          <%= shop.exchange_rate_display %>
+                        </span>
+                      <% end %>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1 mt-1.5">
+                      <% if shop.slot_rates.present? %>
+                        <% shop.slot_rates.each do |rate| %>
+                          <span class="bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 text-[10px] font-medium px-1.5 py-0.5 rounded-full"><%= rate %></span>
+                        <% end %>
+                      <% end %>
+                      <% machine_count = shop.shop_machine_models.size %>
+                      <% if machine_count > 0 %>
+                        <span class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full"><%= machine_count %>機種</span>
+                      <% end %>
+                      <% if shop.notes.present? %>
+                        <% shop_facilities = shop.notes.split("、") %>
+                        <% if shop_facilities.include?("加熱式たばこ遊技OK") %>
+                          <span class="bg-green-50 dark:bg-green-900/40 text-green-700 dark:text-green-400 text-[10px] font-medium px-1.5 py-0.5 rounded-full">🚬遊技中OK</span>
+                        <% elsif shop_facilities.include?("加熱式たばこ喫煙室") %>
+                          <span class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full">🚬喫煙室</span>
+                        <% elsif shop_facilities.include?("加熱式たばこ") %>
+                          <span class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full">🚬加熱式</span>
+                        <% end %>
+                        <% if shop_facilities.include?("Wi-Fi") %>
+                          <span class="text-[10px] text-gray-400">📶</span>
+                        <% end %>
+                        <% if shop_facilities.include?("充電器") %>
+                          <span class="text-[10px] text-gray-400">🔌</span>
+                        <% end %>
+                      <% end %>
+                      <% if shop.parking_spaces.present? && shop.parking_spaces > 0 %>
+                        <span class="text-[10px] text-gray-400">🅿️<%= shop.parking_spaces %></span>
+                      <% end %>
+                      <% if shop.morning_entry.present? %>
+                        <span class="bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[10px] px-1.5 py-0.5 rounded-full">朝整理券</span>
+                      <% end %>
+                      <% if @review_averages[shop.id] %>
+                        <span class="text-yellow-400 text-[10px]">★ <%= @review_averages[shop.id] %></span>
+                      <% end %>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center mt-4">
+        <div class="w-20 h-20 mx-auto mb-3">
+          <%= image_tag "empty_search.svg", alt: "店舗なし", class: "w-full h-full opacity-50" %>
+        </div>
+        <p class="text-gray-500 dark:text-gray-400">この都道府県にはまだ店舗が登録されていません。</p>
+      </div>
+    <% end %>
+  </div>
 </section>

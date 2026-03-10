@@ -6,25 +6,51 @@ class VoteSummary < ApplicationRecord
   validates :shop_id, uniqueness: { scope: [:machine_model_id, :target_date] }
 
   def self.refresh_for(shop_id, machine_model_id, target_date)
-    votes = Vote.where(shop_id: shop_id, machine_model_id: machine_model_id, voted_on: target_date)
+    # Single query: load only the columns we need for aggregation
+    vote_rows = Vote.where(shop_id: shop_id, machine_model_id: machine_model_id, voted_on: target_date)
+                    .pluck(:reset_vote, :setting_vote, :confirmed_setting)
 
     summary = find_or_initialize_by(shop_id: shop_id, machine_model_id: machine_model_id, target_date: target_date)
 
-    reset_votes = votes.where.not(reset_vote: nil)
-    setting_votes = votes.where.not(setting_vote: nil)
+    summary.total_votes = vote_rows.size
 
-    summary.total_votes = votes.count
-    summary.reset_yes_count = reset_votes.where(reset_vote: 1).count
-    summary.reset_no_count = reset_votes.where(reset_vote: 0).count
+    # Aggregate in Ruby (1 SQL instead of 6+)
+    reset_yes = 0
+    reset_no = 0
+    setting_sum = 0
+    setting_count = 0
+    distribution = Hash.new(0)
+    tag_counts = Hash.new(0)
 
-    if setting_votes.exists?
-      summary.setting_avg = setting_votes.average(:setting_vote).round(1)
-      distribution = setting_votes.group(:setting_vote).count
-      summary.setting_distribution = (1..6).each_with_object({}) { |i, h| h[i.to_s] = distribution[i] || 0 }
+    vote_rows.each do |reset_vote, setting_vote, confirmed_tags|
+      case reset_vote
+      when 1 then reset_yes += 1
+      when 0 then reset_no += 1
+      end
+
+      if setting_vote
+        setting_sum += setting_vote
+        setting_count += 1
+        distribution[setting_vote] += 1
+      end
+
+      if confirmed_tags.present?
+        confirmed_tags.each { |tag| tag_counts[tag] += 1 }
+      end
+    end
+
+    summary.reset_yes_count = reset_yes
+    summary.reset_no_count = reset_no
+
+    if setting_count > 0
+      summary.setting_avg = (setting_sum.to_f / setting_count).round(1)
+      summary.setting_distribution = (1..6).each_with_object({}) { |i, h| h[i.to_s] = distribution[i] }
     else
       summary.setting_avg = nil
       summary.setting_distribution = {}
     end
+
+    summary.confirmed_setting_counts = tag_counts.presence || {}
 
     summary.save!
     summary

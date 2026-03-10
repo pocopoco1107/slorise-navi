@@ -1,9 +1,9 @@
 <div id="shop_comments">
-  <h2 class="text-lg font-bold text-gray-800 mb-3">コメント (<%= date.strftime("%-m/%-d") %>)</h2>
+  <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">コメント (<%= date.strftime("%-m/%-d") %>)</h2>
 
   <!-- Comment Form -->
   <turbo-frame id="comment_form">
-    <div class="bg-white border border-gray-200 rounded-lg p-3 mb-4">
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 mb-4">
       <%= form_with model: Comment.new, url: comments_path, data: { turbo: true } do |f| %>
         <%= f.hidden_field :commentable_type, value: "Shop" %>
         <%= f.hidden_field :commentable_id, value: shop.id %>

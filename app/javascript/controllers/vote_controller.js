@@ -5,7 +5,6 @@ export default class extends Controller {
 
   submit(event) {
     const button = event.currentTarget
-    const originalText = button.textContent
 
     // Disable all buttons in this controller to prevent double-clicks
     this.buttonTargets.forEach(btn => {
@@ -13,8 +12,8 @@ export default class extends Controller {
       btn.classList.add("opacity-50", "pointer-events-none")
     })
 
-    // Add loading indicator to clicked button
-    button.textContent = "..."
+    // Add pulse animation to clicked button
+    button.classList.add("animate-pulse")
 
     // Re-enable after a brief delay in case turbo stream doesn't replace
     setTimeout(() => {
@@ -22,7 +21,7 @@ export default class extends Controller {
         btn.disabled = false
         btn.classList.remove("opacity-50", "pointer-events-none")
       })
-      button.textContent = originalText
+      button.classList.remove("animate-pulse")
     }, 3000)
   }
 }

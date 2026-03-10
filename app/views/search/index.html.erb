@@ -1,0 +1,205 @@
+<% content_for(:title) { "全国店舗検索 - スロリセnavi" } %>
+
+<section class="mt-4">
+  <div class="mb-4">
+    <%= link_to "← トップに戻る", root_path, class: "text-sm text-primary hover:underline" %>
+  </div>
+
+  <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">全国店舗検索</h1>
+
+  <!-- Search Form -->
+  <%= form_tag search_path, method: :get, class: "mb-6" do %>
+    <%# フリーワード検索 %>
+    <div class="mb-4">
+      <input type="text" name="q" value="<%= params[:q] %>"
+             placeholder="店舗名で検索..."
+             class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm dark:shadow-none dark:placeholder-gray-400"
+             autocomplete="off">
+    </div>
+
+    <%# フィルタパネル %>
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <%# 都道府県 %>
+        <div class="sm:col-span-2 lg:col-span-3">
+          <h4 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">都道府県</h4>
+          <select name="prefectures[]" multiple
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  size="5">
+            <% @prefectures.each do |pref| %>
+              <option value="<%= pref.slug %>" <%= "selected" if Array(params[:prefectures]).include?(pref.slug) %>>
+                <%= pref.name %>
+              </option>
+            <% end %>
+          </select>
+          <p class="text-[10px] text-gray-400 mt-1">Ctrl/Cmd + クリックで複数選択</p>
+        </div>
+
+        <%# 換金率 %>
+        <div>
+          <h4 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">換金率</h4>
+          <div class="space-y-1.5">
+            <% [["equal_rate", "等価"], ["rate_56", "5.6枚交換"], ["rate_50", "5.0枚交換"], ["non_equal", "非等価"]].each do |value, label| %>
+              <label class="flex items-center gap-2 cursor-pointer group">
+                <input type="checkbox" name="exchange_rates[]" value="<%= value %>"
+                       <%= "checked" if Array(params[:exchange_rates]).include?(value) %>
+                       class="rounded border-gray-300 text-primary focus:ring-primary">
+                <span class="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100"><%= label %></span>
+              </label>
+            <% end %>
+          </div>
+        </div>
+
+        <%# レート %>
+        <div>
+          <h4 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">レート</h4>
+          <div class="space-y-1.5">
+            <% %w[20スロ 5スロ 2スロ 1スロ].each do |rate| %>
+              <label class="flex items-center gap-2 cursor-pointer group">
+                <input type="checkbox" name="rates[]" value="<%= rate %>"
+                       <%= "checked" if Array(params[:rates]).include?(rate) %>
+                       class="rounded border-gray-300 text-primary focus:ring-primary">
+                <span class="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100"><%= rate %></span>
+              </label>
+            <% end %>
+          </div>
+        </div>
+
+        <%# 設備 %>
+        <div>
+          <h4 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">設備</h4>
+          <div class="space-y-1.5">
+            <% [["加熱式たばこ遊技OK", "加熱式たばこ遊技OK"], ["Wi-Fi", "Wi-Fi"], ["充電器", "充電器"], ["parking", "駐車場あり"]].each do |value, label| %>
+              <label class="flex items-center gap-2 cursor-pointer group">
+                <input type="checkbox" name="facilities[]" value="<%= value %>"
+                       <%= "checked" if Array(params[:facilities]).include?(value) %>
+                       class="rounded border-gray-300 text-primary focus:ring-primary">
+                <span class="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100"><%= label %></span>
+              </label>
+            <% end %>
+          </div>
+        </div>
+
+        <%# 開店時間 %>
+        <div>
+          <h4 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">開店時間</h4>
+          <div class="space-y-1.5">
+            <% [["9", "9時台"], ["10", "10時台"]].each do |value, label| %>
+              <label class="flex items-center gap-2 cursor-pointer group">
+                <input type="checkbox" name="opening_hours[]" value="<%= value %>"
+                       <%= "checked" if Array(params[:opening_hours]).include?(value) %>
+                       class="rounded border-gray-300 text-primary focus:ring-primary">
+                <span class="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100"><%= label %></span>
+              </label>
+            <% end %>
+          </div>
+        </div>
+
+        <%# 朝入場ルール %>
+        <div>
+          <h4 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">朝入場ルール</h4>
+          <div class="space-y-1.5">
+            <label class="flex items-center gap-2 cursor-pointer group">
+              <input type="checkbox" name="morning_entry" value="yes"
+                     <%= "checked" if params[:morning_entry] == "yes" %>
+                     class="rounded border-gray-300 text-primary focus:ring-primary">
+              <span class="text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100">ルールあり</span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <%# 検索・クリアボタン %>
+      <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center gap-3">
+        <button type="submit"
+                class="bg-blue-700 dark:bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 dark:hover:bg-blue-500 transition">
+          検索
+        </button>
+        <%= link_to "条件をクリア", search_path, class: "text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline underline-offset-2" %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Results -->
+  <div class="mb-4 flex items-center justify-between">
+    <p class="text-sm text-gray-600 dark:text-gray-300">
+      検索結果: <strong><%= @shops.total_count %></strong>件
+    </p>
+    <% if @shops.total_pages > 1 %>
+      <p class="text-xs text-gray-400"><%= @shops.current_page %> / <%= @shops.total_pages %> ページ</p>
+    <% end %>
+  </div>
+
+  <% if @shops.any? %>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <% @shops.each do |shop| %>
+        <%= link_to shop_path(shop.slug), class: "bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 hover:shadow-md transition-shadow block" do %>
+          <div class="flex items-start justify-between gap-2">
+            <p class="font-bold text-sm text-gray-800 dark:text-gray-100 truncate flex-1"><%= shop.name %></p>
+            <% if shop.exchange_rate != "unknown_rate" %>
+              <span class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full
+                <%= case shop.exchange_rate
+                    when 'equal_rate' then 'bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400'
+                    when 'rate_56' then 'bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
+                    when 'rate_50' then 'bg-orange-50 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400'
+                    when 'non_equal' then 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                    end %>">
+                <%= shop.exchange_rate_display %>
+              </span>
+            <% end %>
+          </div>
+          <p class="text-xs text-gray-500 mt-1"><%= shop.prefecture.name %></p>
+          <% if shop.address.present? %>
+            <p class="text-[10px] text-gray-400 mt-0.5 truncate"><%= shop.address %></p>
+          <% end %>
+          <div class="flex flex-wrap items-center gap-1 mt-1.5">
+            <% if shop.slot_rates.present? %>
+              <% shop.slot_rates.each do |rate| %>
+                <span class="bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 text-[10px] font-medium px-1.5 py-0.5 rounded-full"><%= rate %></span>
+              <% end %>
+            <% end %>
+            <% if shop.business_hours.present? %>
+              <span class="text-[10px] text-gray-400"><%= shop.business_hours %></span>
+            <% end %>
+            <% if shop.notes.present? %>
+              <% shop_facilities = shop.notes.split("、") %>
+              <% if shop_facilities.include?("加熱式たばこ遊技OK") %>
+                <span class="bg-green-50 dark:bg-green-900/40 text-green-700 dark:text-green-400 text-[10px] font-medium px-1.5 py-0.5 rounded-full">🚬遊技中OK</span>
+              <% elsif shop_facilities.include?("加熱式たばこ喫煙室") %>
+                <span class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full">🚬喫煙室</span>
+              <% elsif shop_facilities.include?("加熱式たばこ") %>
+                <span class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full">🚬加熱式</span>
+              <% end %>
+              <% if shop_facilities.include?("Wi-Fi") %>
+                <span class="text-[10px] text-gray-400">📶</span>
+              <% end %>
+              <% if shop_facilities.include?("充電器") %>
+                <span class="text-[10px] text-gray-400">🔌</span>
+              <% end %>
+            <% end %>
+            <% if shop.parking_spaces.present? && shop.parking_spaces > 0 %>
+              <span class="text-[10px] text-gray-400">🅿️<%= shop.parking_spaces %></span>
+            <% end %>
+            <% if shop.morning_entry.present? %>
+              <span class="bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[10px] px-1.5 py-0.5 rounded-full">朝整理券</span>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# ページネーション %>
+    <% if @shops.total_pages > 1 %>
+      <nav class="mt-6 flex justify-center">
+        <%= paginate @shops, window: 2, outer_window: 1 %>
+      </nav>
+    <% end %>
+  <% else %>
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">
+      <p class="text-gray-500">条件に一致する店舗がありません</p>
+      <p class="text-sm text-gray-400 mt-2">検索条件を変更してお試しください</p>
+    </div>
+  <% end %>
+</section>

@@ -1,4 +1,6 @@
 class Vote < ApplicationRecord
+  CONFIRMED_SETTING_TAGS = %w[偶数確 奇数確 2以上 3以上 4以上 5以上 6確].freeze
+
   belongs_to :user, optional: true
   belongs_to :shop
   belongs_to :machine_model
@@ -11,6 +13,7 @@ class Vote < ApplicationRecord
   validate :at_least_one_vote
   validate :voted_on_not_future
   validate :voted_on_not_too_old
+  validate :confirmed_setting_tags_valid
 
   after_save :update_vote_summary
   after_destroy :update_vote_summary
@@ -18,7 +21,7 @@ class Vote < ApplicationRecord
   private
 
   def at_least_one_vote
-    if reset_vote.nil? && setting_vote.nil?
+    if reset_vote.nil? && setting_vote.nil? && confirmed_setting.blank?
       errors.add(:base, "リセット投票か設定投票のどちらかは必須です")
     end
   end
@@ -32,6 +35,14 @@ class Vote < ApplicationRecord
   def voted_on_not_too_old
     if voted_on.present? && voted_on < Date.current - 1
       errors.add(:voted_on, "は前日までしか投票できません")
+    end
+  end
+
+  def confirmed_setting_tags_valid
+    return if confirmed_setting.blank?
+    invalid_tags = confirmed_setting - CONFIRMED_SETTING_TAGS
+    if invalid_tags.any?
+      errors.add(:confirmed_setting, "に無効なタグが含まれています: #{invalid_tags.join(', ')}")
     end
   end
 

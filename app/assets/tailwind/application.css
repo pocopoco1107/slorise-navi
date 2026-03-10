@@ -1,5 +1,31 @@
 @import "tailwindcss";
 
+/* ダークモード: .dark クラスベース (Stimulus theme コントローラで制御) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* スムーズスクロール */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* turbo-frame をブロック要素化 (gridの子要素として正しく動作させる) */
+turbo-frame {
+  display: block;
+}
+
+/* タップハイライトを抑制 (iOS) */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* フォーカス可視化 (アクセシビリティ) */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 @theme {
   --color-primary: #1e40af;
   --color-primary-light: #3b82f6;
@@ -8,10 +34,39 @@
   --color-success: #10b981;
   --color-vote-yes: #10b981;
   --color-vote-no: #ef4444;
-  --color-setting-1: #6b7280;
-  --color-setting-2: #3b82f6;
+  /* Setting heatmap: cold(low) → hot(high) */
+  --color-setting-1: #3b82f6;
+  --color-setting-2: #06b6d4;
   --color-setting-3: #10b981;
   --color-setting-4: #f59e0b;
   --color-setting-5: #f97316;
   --color-setting-6: #ef4444;
+  --color-confirmed: #7c3aed;
+  --color-confirmed-light: #a78bfa;
+}
+
+/* ダークモードでの色調整 */
+.dark {
+  color-scheme: dark;
+}
+
+/* ダークモードでのフォームコントロール */
+.dark select,
+.dark input[type="text"],
+.dark input[type="email"],
+.dark textarea {
+  background-color: #1f2937;
+  border-color: #374151;
+  color: #f3f4f6;
+}
+
+.dark select option {
+  background-color: #1f2937;
+  color: #f3f4f6;
+}
+
+/* ダークモードでのチェックボックス */
+.dark input[type="checkbox"] {
+  background-color: #374151;
+  border-color: #4b5563;
 }

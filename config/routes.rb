@@ -10,11 +10,17 @@ Rails.application.routes.draw do
   resources :shops, only: [:show], param: :slug do
     collection do
       get :favorites
+      get :nearby
+      get :autocomplete
+      get :machines_for_shop
     end
     member do
       get "dates/:date", action: :show_date, as: :date, constraints: { date: /\d{4}-\d{2}-\d{2}/ }
+      get :trend_data
+      get :calendar
     end
     resources :shop_reviews, only: [:create], path: "reviews"
+    resources :shop_events, only: [:create], path: "events"
   end
   resources :machines, only: [:show], param: :slug do
     collection do
@@ -22,12 +28,16 @@ Rails.application.routes.draw do
     end
   end
   resources :votes, only: [:create, :update]
+  resources :play_records, only: [:index, :create, :update, :destroy]
   resources :comments, only: [:create]
   resources :reports, only: [:create]
   resources :feedbacks, only: [:new, :create]
   resources :shop_requests, only: [:new, :create, :show]
 
+  resources :rankings, only: [:index]
+
   get "voter/status", to: "voter#status", as: :voter_status
+  post "voter/restore", to: "voter#restore", as: :restore_voter_token
 
   get "search", to: "search#index"
 

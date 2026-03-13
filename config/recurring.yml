@@ -1,15 +1,50 @@
-# examples:
-#   periodic_cleanup:
-#     class: CleanSoftDeletedRecordsJob
-#     queue: background
-#     args: [ 1000, { batch_size: 500 } ]
-#     schedule: every hour
-#   periodic_cleanup_with_command:
-#     command: "SoftDeletedRecord.due.delete_all"
-#     priority: 2
-#     schedule: at 5am every day
+# Solid Queue recurring tasks
+# ⚠️ 現在 Solid Queue は無効 (gem コメントアウト、adapter: :async)
+# ⚠️ 本番スケジュールは render.yaml の cron jobs で管理
+# ⚠️ Solid Queue を有効化する場合: Gemfile で gem "solid_queue" を有効化 +
+#     production.rb で config.active_job.queue_adapter = :solid_queue +
+#     puma.rb の SOLID_QUEUE_IN_PUMA 環境変数を設定
+#
+# Schedule is in UTC (JST = UTC + 9)
+# このファイルは Solid Queue 有効化時のリファレンス用
 
 production:
+  # 新台マスタ取得 + 全店同期（機種リスト+台数） — 03:00 JST (18:00 UTC前日)
+  # ※毎月1日はスキップ（月次ジョブが代わりに実行）
+  daily_new_machines:
+    command: "PworldScraper.import_new_machines_from_schedule"
+    schedule: at 6pm every day
+
+  daily_machine_refresh:
+    class: DailyMachineRefreshJob
+    schedule: at 6:05pm every day
+
+  # SNS RSS収集+パース — 一旦停止 (有効なRSSフィードが1つのみ、効果薄)
+  # daily_sns_collect:
+  #   command: "SnsCollector.collect_from_rss; SnsCollector.parse_unparsed"
+  #   schedule: at 3am every day
+
+  # ランキング集計 — 04:00 JST
+  ranking_refresh:
+    command: "VoterRanking.refresh_weekly!; VoterRanking.refresh_monthly!; VoterRanking.refresh_all_time!"
+    schedule: at 7pm every day
+
+  # 収支集計キャッシュ — 04:30 JST
+  play_record_summary_refresh:
+    command: "PlayRecordSummary.refresh_all!"
+    schedule: at 7:30pm every day
+
+  # VoterProfile — 05:00 JST
+  voter_profile_refresh:
+    command: "Vote.where(voted_on: 7.days.ago..Date.current).select(:voter_token).distinct.pluck(:voter_token).each { |t| VoterProfile.refresh_for(t) }"
+    schedule: at 8pm every day
+
+  # 全店フル同期（機種+台数+店舗詳細） — 毎月1日 03:00 JST
+  monthly_shop_details:
+    class: MonthlyShopDetailsJob
+    schedule: at 6pm on the 1st day of every month
+
+  # Solid Queue クリーンアップ
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12

@@ -1,0 +1,69 @@
+<%# Read-only display of user's vote and crowd summary for a play record entry %>
+<%
+  user_vote = local_assigns[:user_vote]
+  vote_summary = local_assigns[:vote_summary]
+
+  s_colors = { 1 => 'text-setting-1', 2 => 'text-setting-2', 3 => 'text-setting-3',
+               4 => 'text-setting-4', 5 => 'text-setting-5', 6 => 'text-setting-6' }
+  confirmed_colors = {
+    '偶数確' => 'text-setting-2', '奇数確' => 'text-setting-1',
+    '2以上' => 'text-setting-2', '3以上' => 'text-setting-3',
+    '4以上' => 'text-setting-4', '5以上' => 'text-setting-5',
+    '6確' => 'text-setting-6'
+  }
+
+  has_user_data = user_vote && (user_vote.reset_vote.present? || user_vote.setting_vote.present? || user_vote.confirmed_setting.present?)
+
+  has_summary = vote_summary && (
+    vote_summary.reset_yes_count.to_i + vote_summary.reset_no_count.to_i > 0 ||
+    (vote_summary.setting_distribution || {}).values.any? { |v| v.to_i > 0 } ||
+    (vote_summary.confirmed_setting_counts || {}).values.any? { |v| v.to_i > 0 }
+  )
+%>
+
+<% if has_user_data || has_summary %>
+  <div class="mt-1 space-y-0.5">
+    <%# User's own vote %>
+    <% if has_user_data %>
+      <div class="flex flex-wrap items-center gap-1 text-[9px] tabular-nums">
+        <span class="text-muted-foreground">自分:</span>
+        <% if user_vote.reset_vote == 1 %>
+          <span class="text-vote-yes font-bold">リセット</span>
+        <% elsif user_vote.reset_vote == 0 %>
+          <span class="text-vote-no font-bold">据え置き</span>
+        <% end %>
+        <% if user_vote.setting_vote %>
+          <span class="<%= s_colors[user_vote.setting_vote] %> font-bold">設定<%= user_vote.setting_vote %></span>
+        <% end %>
+        <% (user_vote.confirmed_setting || []).each do |tag| %>
+          <span class="<%= confirmed_colors[tag] || 'text-confirmed' %> font-bold"><%= tag %></span>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Crowd summary %>
+    <% if has_summary %>
+      <%
+        s_dist = vote_summary.setting_distribution || {}
+        s_entries = (1..6).select { |s| s_dist[s.to_s].to_i > 0 }
+        c_counts = vote_summary.confirmed_setting_counts || {}
+        c_entries = c_counts.select { |_, v| v.to_i > 0 }
+      %>
+      <div class="flex flex-wrap items-center gap-1 text-[9px] tabular-nums">
+        <span class="text-muted-foreground">みんな:</span>
+        <% if vote_summary.reset_yes_count.to_i > 0 %>
+          <span class="text-vote-yes font-bold">リセ<%= vote_summary.reset_yes_count %></span>
+        <% end %>
+        <% if vote_summary.reset_no_count.to_i > 0 %>
+          <span class="text-vote-no font-bold">据置<%= vote_summary.reset_no_count %></span>
+        <% end %>
+        <% s_entries.each do |s| %>
+          <span class="<%= s_colors[s] %> font-bold">設定<%= s %>:<%= s_dist[s.to_s].to_i %></span>
+        <% end %>
+        <% c_entries.sort_by { |_, v| -v.to_i }.first(3).each do |tag, count| %>
+          <span class="<%= confirmed_colors[tag] || 'text-confirmed' %> font-bold"><%= tag %><%= count %></span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

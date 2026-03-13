@@ -1,0 +1,184 @@
+<% content_for(:title) { "記録ランキング | ヨミスロ" } %>
+
+<section class="max-w-2xl mx-auto" data-controller="ranking-tab">
+  <h1 class="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+    <span class="w-1 h-5 bg-slot-yellow rounded-full"></span>
+    記録ランキング
+  </h1>
+
+  <%# === Period Tabs === %>
+  <div class="flex gap-1 bg-secondary rounded-lg p-1 mb-4">
+    <%
+      periods = [
+        { key: "weekly", label: "週間" },
+        { key: "monthly", label: "月間" },
+        { key: "all_time", label: "累計" }
+      ]
+    %>
+    <% periods.each do |p| %>
+      <button type="button"
+              data-action="click->ranking-tab#switch"
+              data-param="period"
+              data-value="<%= p[:key] %>"
+              class="flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors min-h-[44px]
+                     <%= @period == p[:key] ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground' %>">
+        <%= p[:label] %>
+      </button>
+    <% end %>
+  </div>
+
+  <%# === Scope Tabs === %>
+  <div class="flex gap-2 mb-4">
+    <button type="button"
+            data-action="click->ranking-tab#switch"
+            data-param="scope"
+            data-value="national"
+            class="rounded-full px-5 py-2 text-sm font-medium transition-colors min-h-[44px]
+                   <%= @scope == 'national' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground' %>">
+      全国
+    </button>
+    <button type="button"
+            data-action="click->ranking-tab#switch"
+            data-param="scope"
+            data-value="prefecture"
+            class="rounded-full px-5 py-2 text-sm font-medium transition-colors min-h-[44px]
+                   <%= @scope == 'prefecture' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground' %>">
+      県別
+    </button>
+  </div>
+
+  <%# === Prefecture Selector (shown only when scope=prefecture) === %>
+  <% if @scope == "prefecture" && @prefectures %>
+    <div class="mb-4">
+      <select onchange="(function(el){ var url = new URL(window.location); url.searchParams.set('prefecture_id', el.value); Turbo.visit(url.toString()); })(this)"
+              class="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground min-h-[44px]">
+        <option value="">都道府県を選択</option>
+        <% @prefectures.each do |pref| %>
+          <option value="<%= pref.id %>" <%= 'selected' if @prefecture_id.to_s == pref.id.to_s %>><%= pref.name %></option>
+        <% end %>
+      </select>
+    </div>
+  <% end %>
+
+  <%# === My Rank Card === %>
+  <% if @my_rank %>
+    <div class="bg-gradient-to-r from-slot-blue/5 via-slot-green/5 to-slot-yellow/5 border border-primary/30 rounded-lg p-4 mb-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs text-muted-foreground">あなたの順位</p>
+          <p class="text-2xl font-bold text-primary tabular-nums mt-0.5">
+            <%= @my_rank.rank_position %><span class="text-sm font-normal text-muted-foreground ml-0.5">位</span>
+          </p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs text-muted-foreground">記録数</p>
+          <p class="text-2xl font-bold text-foreground tabular-nums mt-0.5">
+            <%= @my_rank.vote_count %><span class="text-sm font-normal text-muted-foreground ml-0.5">件</span>
+          </p>
+        </div>
+      </div>
+      <%
+        profile = VoterProfile.find_by(voter_token: cookies[:voter_token])
+      %>
+      <% if profile&.rank_title %>
+        <div class="mt-2 pt-2 border-t border-border">
+          <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary"><%= profile.rank_title %></span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# === Rankings List === %>
+  <% if @rankings.any? %>
+    <div class="bg-card border border-border rounded-lg divide-y divide-border">
+      <% @rankings.each do |entry| %>
+        <%
+          is_me = cookies[:voter_token].present? && entry.voter_token == cookies[:voter_token]
+          medal = case entry.rank_position
+                  when 1 then { icon: "\u{1F947}", color: "text-yellow-500" }
+                  when 2 then { icon: "\u{1F948}", color: "text-gray-400" }
+                  when 3 then { icon: "\u{1F949}", color: "text-amber-700" }
+                  else nil
+                  end
+          profile = VoterProfile.find_by(voter_token: entry.voter_token)
+        %>
+        <div class="flex items-center gap-3 px-4 py-3 min-h-[52px] <%= 'bg-primary/5' if is_me %>">
+          <%# Rank %>
+          <div class="w-8 text-center shrink-0">
+            <% if medal %>
+              <span class="text-xl"><%= medal[:icon] %></span>
+            <% else %>
+              <span class="text-sm font-bold tabular-nums text-muted-foreground"><%= entry.rank_position %></span>
+            <% end %>
+          </div>
+
+          <%# Voter Info %>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-medium text-foreground truncate <%= 'text-primary' if is_me %>">
+                <%= entry.voter_label %>
+                <% if is_me %>
+                  <span class="text-[10px] font-normal text-primary ml-1">(あなた)</span>
+                <% end %>
+              </span>
+            </div>
+            <% if profile&.rank_title %>
+              <span class="text-[10px] font-medium text-muted-foreground"><%= profile.rank_title %></span>
+            <% end %>
+          </div>
+
+          <%# Vote Count %>
+          <div class="text-right shrink-0">
+            <span class="text-sm font-bold tabular-nums text-foreground"><%= entry.vote_count %></span>
+            <span class="text-[10px] text-muted-foreground ml-0.5">件</span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="bg-card border border-border rounded-lg p-8 text-center">
+      <div class="flex flex-col items-center">
+        <svg class="w-12 h-12 text-muted-foreground/40 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+          <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4-4v2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="9" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="text-sm font-medium text-foreground mb-1">ランキングデータがありません</p>
+        <p class="text-xs text-muted-foreground">
+          <% case @period %>
+          <% when "weekly" %>
+            今週の記録データがまだ集計されていません
+          <% when "monthly" %>
+            今月の記録データがまだ集計されていません
+          <% else %>
+            記録データがまだ集計されていません
+          <% end %>
+        </p>
+      </div>
+    </div>
+  <% end %>
+
+  <%# === Period Info === %>
+  <div class="mt-4 text-center">
+    <p class="text-[10px] text-muted-foreground">
+      <% case @period %>
+      <% when "weekly" %>
+        週間ランキングは5件以上のユーザーが対象です
+      <% when "monthly" %>
+        月間ランキングは10件以上のユーザーが対象です
+      <% else %>
+        累計ランキングは全期間の記録数で集計しています
+      <% end %>
+    </p>
+  </div>
+
+  <%# === Link to Voter Status === %>
+  <div class="mt-6 text-center">
+    <%= link_to voter_status_path, class: "inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline min-h-[44px]" do %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      マイステータスを見る
+    <% end %>
+  </div>
+</section>

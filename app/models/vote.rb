@@ -10,7 +10,6 @@ class Vote < ApplicationRecord
   validates :voter_token, uniqueness: { scope: [:shop_id, :machine_model_id, :voted_on], message: "は1日1店舗1機種につき1票です" }
   validates :reset_vote, inclusion: { in: [0, 1], allow_nil: true }
   validates :setting_vote, inclusion: { in: 1..6, allow_nil: true }
-  validate :at_least_one_vote
   validate :voted_on_not_future
   validate :voted_on_not_too_old
   validate :confirmed_setting_tags_valid
@@ -19,14 +18,9 @@ class Vote < ApplicationRecord
 
   after_save :update_vote_summary
   after_destroy :update_vote_summary
+  after_commit :enqueue_voter_profile_refresh, on: [:create, :update, :destroy]
 
   private
-
-  def at_least_one_vote
-    if reset_vote.nil? && setting_vote.nil? && confirmed_setting.blank?
-      errors.add(:base, "リセット投票か設定投票のどちらかは必須です")
-    end
-  end
 
   def voted_on_not_future
     if voted_on.present? && voted_on > Date.current
@@ -36,7 +30,7 @@ class Vote < ApplicationRecord
 
   def voted_on_not_too_old
     if voted_on.present? && voted_on < Date.current - 1
-      errors.add(:voted_on, "は前日までしか投票できません")
+      errors.add(:voted_on, "は前日までしか記録できません")
     end
   end
 
@@ -50,5 +44,9 @@ class Vote < ApplicationRecord
 
   def update_vote_summary
     @cached_vote_summary = VoteSummary.refresh_for(shop_id, machine_model_id, voted_on)
+  end
+
+  def enqueue_voter_profile_refresh
+    RefreshVoterProfileJob.perform_later(voter_token) if voter_token.present?
   end
 end

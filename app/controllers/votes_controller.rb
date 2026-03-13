@@ -8,8 +8,14 @@ class VotesController < ApplicationController
     )
     # Only update the vote type that was submitted (don't overwrite the other)
     merge_params = { voter_token: voter_token }
-    merge_params[:reset_vote] = vote_params[:reset_vote] if vote_params.key?(:reset_vote)
-    merge_params[:setting_vote] = vote_params[:setting_vote] if vote_params.key?(:setting_vote)
+    if vote_params.key?(:reset_vote)
+      new_val = vote_params[:reset_vote].to_i
+      merge_params[:reset_vote] = (@vote.reset_vote == new_val) ? nil : new_val
+    end
+    if vote_params.key?(:setting_vote)
+      new_val = vote_params[:setting_vote].to_i
+      merge_params[:setting_vote] = (@vote.setting_vote == new_val) ? nil : new_val
+    end
     if vote_params.key?(:confirmed_setting)
       # Toggle: if tag already exists, remove it; otherwise add it
       tag = vote_params[:confirmed_setting]
@@ -21,6 +27,20 @@ class VotesController < ApplicationController
       end
     end
     @vote.assign_attributes(vote_params.slice(:shop_id, :machine_model_id, :voted_on).merge(merge_params))
+
+    # If all vote fields are empty, destroy the vote record
+    if @vote.persisted? && @vote.reset_vote.nil? && @vote.setting_vote.nil? && @vote.confirmed_setting.blank?
+      @vote.destroy
+      @shop = Shop.find(@vote.shop_id)
+      @machine_model = MachineModel.find(@vote.machine_model_id)
+      @vote_summary = VoteSummary.find_by(shop_id: @vote.shop_id, machine_model_id: @vote.machine_model_id, target_date: @vote.voted_on)
+      @vote = Vote.new(shop_id: @shop.id, machine_model_id: @machine_model.id, voted_on: vote_params[:voted_on])
+      respond_to do |format|
+        format.turbo_stream { render :create }
+        format.html { redirect_to shop_path(@shop) }
+      end
+      return
+    end
 
     if @vote.save
       @shop = @vote.shop

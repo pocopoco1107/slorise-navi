@@ -1,0 +1,129 @@
+<%# Per-machine entry: machine select + result amount + vote fields %>
+<% index = local_assigns[:index] || 0 %>
+<% removable = local_assigns[:removable] || false %>
+<% is_template = (index.to_s == "__INDEX__") %>
+
+<div class="border border-border rounded-lg p-3 bg-background" data-play-record-form-target="entry">
+  <%# Row 1: Machine autocomplete search + remove button %>
+  <div class="flex items-center gap-2 mb-2">
+    <div class="flex-1 relative" data-controller="machine-autocomplete"
+         data-action="click@document->machine-autocomplete#closeResults machine-options:machinesLoaded@window->machine-autocomplete#loadMachines">
+      <%# Selected machine label (shown after selection) %>
+      <div data-machine-autocomplete-target="label"
+           class="hidden flex items-center gap-2 border border-input bg-background rounded-md px-2 py-2 min-h-[44px]">
+        <span class="flex-1 text-sm text-foreground truncate"></span>
+        <button type="button" data-action="click->machine-autocomplete#clear"
+                class="shrink-0 text-muted-foreground hover:text-destructive transition-colors p-0.5"
+                title="選択解除">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <%# Search input (hidden when machine is selected) %>
+      <input type="text" placeholder="店舗を選択すると検索できます" autocomplete="off"
+             data-machine-autocomplete-target="input"
+             data-action="input->machine-autocomplete#search focus->machine-autocomplete#focus"
+             class="w-full border border-input bg-background text-foreground rounded-md px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring min-h-[44px] placeholder:text-muted-foreground">
+      <%# Hidden field for machine_model_id %>
+      <input type="hidden" name="entries[<%= index %>][machine_model_id]" value=""
+             <%= "data-index-placeholder" if is_template %>
+             data-entry-field="machine_model_id"
+             data-machine-autocomplete-target="hidden">
+      <%# Results dropdown %>
+      <div data-machine-autocomplete-target="results"
+           class="hidden absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-20 max-h-[200px] overflow-y-auto divide-y divide-border"></div>
+    </div>
+    <% if removable %>
+      <button type="button" data-action="click->play-record-form#removeEntry"
+              class="shrink-0 w-11 h-11 flex items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:text-destructive hover:border-destructive transition-colors min-w-[44px] min-h-[44px]"
+              title="削除">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    <% end %>
+  </div>
+
+  <%# Row 2: +/- toggle + amount %>
+  <div class="flex items-center gap-2" data-controller="result-input">
+    <button type="button" data-action="click->result-input#toggleSign"
+            class="shrink-0 w-12 h-12 flex items-center justify-center rounded-lg border border-border bg-background text-lg font-bold transition-colors hover:bg-secondary min-w-[48px] min-h-[48px]">
+      <span data-result-input-target="sign" class="text-primary">+</span>
+    </button>
+    <input type="number" min="0" max="999999" placeholder="収支(枚)" inputmode="numeric"
+           data-result-input-target="amount"
+           data-action="input->result-input#input"
+           class="flex-1 border border-input bg-background text-foreground rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-ring tabular-nums min-h-[48px]">
+    <input type="hidden" name="entries[<%= index %>][result_amount]" value="0"
+           <%= "data-index-placeholder" if is_template %>
+           data-result-input-target="hidden" data-entry-field="result_amount">
+  </div>
+
+  <%# Row 3: Vote fields (reset / setting / confirmed) %>
+  <div class="mt-2.5 space-y-2 pt-2 border-t border-border/50" data-controller="entry-vote">
+    <%# Reset %>
+    <div class="flex items-center gap-2">
+      <span class="text-[10px] font-semibold text-muted-foreground w-14 shrink-0">朝イチ</span>
+      <input type="hidden" name="entries[<%= index %>][reset_vote]" value=""
+             <%= "data-index-placeholder" if is_template %>
+             data-entry-field="reset_vote"
+             data-entry-vote-target="resetHidden">
+      <button type="button" data-action="click->entry-vote#selectReset"
+              data-entry-vote-target="resetBtn" data-value="1"
+              class="bg-vote-yes/10 text-vote-yes rounded px-2.5 py-1 text-[11px] font-bold active:scale-95 transition-all min-h-[32px]">
+        リセット
+      </button>
+      <button type="button" data-action="click->entry-vote#selectReset"
+              data-entry-vote-target="resetBtn" data-value="0"
+              class="bg-vote-no/10 text-vote-no rounded px-2.5 py-1 text-[11px] font-bold active:scale-95 transition-all min-h-[32px]">
+        据え置き
+      </button>
+    </div>
+
+    <%# Setting %>
+    <div class="flex items-center gap-2">
+      <span class="text-[10px] font-semibold text-muted-foreground w-14 shrink-0">設定推測</span>
+      <input type="hidden" name="entries[<%= index %>][setting_vote]" value=""
+             <%= "data-index-placeholder" if is_template %>
+             data-entry-field="setting_vote"
+             data-entry-vote-target="settingHidden">
+      <div class="flex gap-1">
+        <% (1..6).each do |s| %>
+          <button type="button" data-action="click->entry-vote#selectSetting"
+                  data-entry-vote-target="settingBtn" data-value="<%= s %>"
+                  class="bg-setting-<%= s %>/10 text-setting-<%= s %> rounded w-8 h-8 text-xs font-bold active:scale-90 transition-all">
+            <%= s %>
+          </button>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Confirmed %>
+    <div class="flex items-center gap-1.5 flex-wrap">
+      <span class="text-[10px] font-semibold text-muted-foreground w-14 shrink-0">確定情報</span>
+      <% Vote::CONFIRMED_SETTING_TAGS.each do |tag| %>
+        <%
+          tag_color = case tag
+                      when '偶数確', '2以上' then 'setting-2'
+                      when '奇数確' then 'setting-1'
+                      when '3以上' then 'setting-3'
+                      when '4以上' then 'setting-4'
+                      when '5以上' then 'setting-5'
+                      when '6確' then 'setting-6'
+                      end
+        %>
+        <input type="checkbox" name="entries[<%= index %>][confirmed_setting][]" value="<%= tag %>"
+               <%= "data-index-placeholder" if is_template %>
+               data-entry-field="confirmed_setting"
+               class="hidden" data-entry-vote-target="confirmedInput">
+        <button type="button"
+               data-entry-vote-target="confirmedBtn" data-tag="<%= tag %>"
+               data-action="click->entry-vote#toggleConfirmed"
+               class="bg-<%= tag_color %>/10 text-<%= tag_color %> rounded px-2 py-1 text-[10px] font-bold cursor-pointer active:scale-95 transition-all min-h-[28px] inline-flex items-center">
+          <%= tag %>
+        </button>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -6,6 +6,8 @@ class Shop < ApplicationRecord
   has_many :vote_summaries, dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
   has_many :shop_reviews, dependent: :destroy
+  has_many :shop_events, dependent: :destroy
+  has_many :play_records, dependent: :destroy
 
   # Exchange rate enum
   attribute :exchange_rate, :integer, default: 0
@@ -43,6 +45,10 @@ class Shop < ApplicationRecord
     when "non_equal" then "非等価"
     else "未設定"
     end
+  end
+
+  def geocode_accurate?
+    geocode_precision.to_i >= 2
   end
 
   private

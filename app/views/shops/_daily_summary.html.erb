@@ -1,0 +1,88 @@
+<%# Daily vote summary — recorded machines with detailed reset/setting breakdown %>
+<%
+  recorded = vote_summaries.values
+    .select { |vs| vs.total_votes > 0 }
+    .sort_by { |vs| [-vs.total_votes, machine_names[vs.machine_model_id].to_s] }
+%>
+
+<div id="daily-summary" class="bg-card border border-border rounded-lg p-4 mb-4 scroll-mt-4">
+  <h2 class="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+    <span class="w-1 h-4 bg-primary rounded-full"></span>
+    <%= date.strftime("%-m/%-d") %>(<%= %w[日 月 火 水 木 金 土][date.wday] %>) の記録
+    <% if recorded.any? %>
+      <span class="text-xs font-normal text-muted-foreground"><%= recorded.size %>機種</span>
+    <% end %>
+  </h2>
+
+  <% if recorded.any? %>
+    <div class="divide-y divide-border">
+      <% recorded.each do |vs| %>
+        <%
+          name = machine_names[vs.machine_model_id] || "不明"
+          slug = machine_slugs[vs.machine_model_id]
+          reset_total = vs.reset_yes_count + vs.reset_no_count
+          dist = vs.setting_distribution || {}
+          confirmed = vs.confirmed_setting_counts || {}
+          dist_total = dist.values.map(&:to_i).sum
+
+          setting_colors = {
+            1 => 'bg-setting-1/15 text-setting-1',
+            2 => 'bg-setting-2/15 text-setting-2',
+            3 => 'bg-setting-3/15 text-setting-3',
+            4 => 'bg-setting-4/15 text-setting-4',
+            5 => 'bg-setting-5/15 text-setting-5',
+            6 => 'bg-setting-6/15 text-setting-6'
+          }
+        %>
+        <div class="py-2.5">
+          <%# Row 1: Machine name %>
+          <div class="flex items-center gap-2 mb-1.5">
+            <% if slug %>
+              <%= link_to machine_path(slug), class: "text-sm font-bold text-foreground hover:text-primary transition-colors truncate flex-1 min-w-0" do %>
+                <%= name %>
+              <% end %>
+            <% else %>
+              <span class="text-sm font-bold text-foreground truncate flex-1 min-w-0"><%= name %></span>
+            <% end %>
+          </div>
+
+          <%# Row 2: Detail badges %>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <%# Reset votes %>
+            <% if reset_total > 0 %>
+              <span class="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded bg-vote-yes/10 text-vote-yes">
+                リセット <%= vs.reset_yes_count %>
+              </span>
+              <span class="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded bg-vote-no/10 text-vote-no">
+                据え置き <%= vs.reset_no_count %>
+              </span>
+            <% end %>
+
+            <%# Setting distribution %>
+            <% if dist_total > 0 %>
+              <% (1..6).each do |s| %>
+                <% count = dist[s.to_s].to_i %>
+                <% next if count == 0 %>
+                <span class="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded <%= setting_colors[s] %>">
+                  設定<%= s %> <%= count %>
+                </span>
+              <% end %>
+            <% end %>
+
+            <%# Confirmed settings %>
+            <% if confirmed.values.sum.to_i > 0 %>
+              <% confirmed.sort_by { |_, v| -v.to_i }.each do |tag, count| %>
+                <% next if count.to_i == 0 %>
+                <span class="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded bg-confirmed/10 text-confirmed">
+                  <%= tag %> <%= count %>
+                </span>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-sm text-muted-foreground text-center py-4">この日の記録はまだありません</p>
+  <% end %>
+</div>

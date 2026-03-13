@@ -1,0 +1,31 @@
+<div class="bg-card border border-border rounded-lg px-3 py-2.5 flex items-start gap-3 animate-fade-in">
+  <%# Date badge %>
+  <div class="flex-shrink-0 text-center min-w-[44px]">
+    <div class="text-[10px] text-muted-foreground uppercase"><%= event.event_date.strftime("%-m月") %></div>
+    <div class="text-lg font-bold tabular-nums text-foreground leading-tight"><%= event.event_date.day %></div>
+    <div class="text-[10px] text-muted-foreground"><%= %w[日 月 火 水 木 金 土][event.event_date.wday] %></div>
+  </div>
+
+  <%# Content %>
+  <div class="flex-1 min-w-0">
+    <div class="flex items-center gap-1.5 mb-0.5">
+      <span class="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-md <%= event.event_type_color %>">
+        <%= event.event_type_label %>
+      </span>
+      <% if label == :upcoming %>
+        <span class="text-[10px] text-primary font-medium">予定</span>
+      <% end %>
+    </div>
+    <p class="text-sm font-medium text-foreground truncate"><%= event.title %></p>
+    <% if event.description.present? %>
+      <p class="text-xs text-muted-foreground mt-0.5 line-clamp-2"><%= event.description %></p>
+    <% end %>
+    <% if event.source_url.present? %>
+      <a href="<%= event.source_url %>" target="_blank" rel="noopener noreferrer"
+         class="text-[10px] text-primary hover:underline inline-flex items-center gap-0.5 mt-0.5">
+        ソース
+        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+      </a>
+    <% end %>
+  </div>
+</div>

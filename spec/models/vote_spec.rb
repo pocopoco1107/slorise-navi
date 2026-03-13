@@ -7,10 +7,9 @@ RSpec.describe Vote, type: :model do
       expect(vote).to be_valid
     end
 
-    it "requires at least one vote type" do
+    it "is valid with no vote type (all nil)" do
       vote = build(:vote, reset_vote: nil, setting_vote: nil, confirmed_setting: [])
-      expect(vote).not_to be_valid
-      expect(vote.errors[:base]).to include("リセット投票か設定投票のどちらかは必須です")
+      expect(vote).to be_valid
     end
 
     it "is valid with only confirmed_setting" do
@@ -199,7 +198,7 @@ RSpec.describe Vote, type: :model do
     it "rejects two days ago" do
       vote = build(:vote, voted_on: Date.current - 2)
       expect(vote).not_to be_valid
-      expect(vote.errors[:voted_on]).to include("は前日までしか投票できません")
+      expect(vote.errors[:voted_on]).to include("は前日までしか記録できません")
     end
 
     it "rejects a date far in the past" do

@@ -1,0 +1,85 @@
+<%#
+  Weekly summary card
+  Local variables:
+    summary - Hash: { total_votes:, prev_week_votes:, vote_change:, top_reset_machines:, top_setting_machines: }
+%>
+<div class="bg-card border border-border rounded-lg p-4">
+  <h2 class="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+    <span class="w-1 h-4 bg-chart-3 rounded-full"></span>
+    今週のまとめ
+  </h2>
+
+  <%# Total votes + week-over-week change %>
+  <div class="flex items-center gap-4 mb-4">
+    <div>
+      <span class="text-xs text-muted-foreground block">今週の総記録数</span>
+      <span class="text-2xl font-bold text-foreground tabular-nums"><%= summary[:total_votes] %></span>
+      <span class="text-xs text-muted-foreground">件</span>
+    </div>
+    <% if summary[:prev_week_votes] > 0 || summary[:vote_change] != 0 %>
+      <div class="flex items-center gap-1">
+        <% if summary[:vote_change] > 0 %>
+          <svg class="w-4 h-4 text-vote-yes" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+          <span class="text-sm font-semibold text-vote-yes tabular-nums">+<%= summary[:vote_change] %></span>
+        <% elsif summary[:vote_change] < 0 %>
+          <svg class="w-4 h-4 text-vote-no" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+          <span class="text-sm font-semibold text-vote-no tabular-nums"><%= summary[:vote_change] %></span>
+        <% else %>
+          <span class="text-sm text-muted-foreground">+-0</span>
+        <% end %>
+        <span class="text-[10px] text-muted-foreground">前週比</span>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <%# Top Reset Rate Machines %>
+    <div>
+      <p class="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-vote-yes"></span>
+        リセット率 TOP3
+      </p>
+      <% if summary[:top_reset_machines].any? %>
+        <div class="space-y-1.5">
+          <% summary[:top_reset_machines].each_with_index do |machine, i| %>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-bold text-muted-foreground w-4 text-right tabular-nums"><%= i + 1 %>.</span>
+              <span class="text-xs text-foreground truncate flex-1"><%= machine[:name] %></span>
+              <span class="text-xs font-bold text-vote-yes tabular-nums"><%= machine[:rate] %>%</span>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-[11px] text-muted-foreground">まだ記録が少ないです</p>
+      <% end %>
+    </div>
+
+    <%# Top Setting Average Machines %>
+    <div>
+      <p class="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-setting-6"></span>
+        高設定 TOP3
+      </p>
+      <% if summary[:top_setting_machines].any? %>
+        <div class="space-y-1.5">
+          <% summary[:top_setting_machines].each_with_index do |machine, i| %>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-bold text-muted-foreground w-4 text-right tabular-nums"><%= i + 1 %>.</span>
+              <span class="text-xs text-foreground truncate flex-1"><%= machine[:name] %></span>
+              <%
+                avg_color = case machine[:avg]
+                            when 0..2 then 'text-setting-1'
+                            when 2..4 then 'text-setting-4'
+                            else 'text-setting-6'
+                            end
+              %>
+              <span class="text-xs font-bold <%= avg_color %> tabular-nums"><%= machine[:avg] %></span>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-[11px] text-muted-foreground">まだ記録が少ないです</p>
+      <% end %>
+    </div>
+  </div>
+</div>

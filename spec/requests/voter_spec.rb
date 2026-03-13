@@ -5,7 +5,7 @@ RSpec.describe "Voter", type: :request do
     it "renders without voter_token cookie" do
       get voter_status_path
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("まだ投票していません")
+      expect(response.body).to include("はじめての記録で称号GET!")
     end
 
     it "renders with voter_token but no votes" do
@@ -27,8 +27,8 @@ RSpec.describe "Voter", type: :request do
       it "displays vote statistics" do
         get voter_status_path, headers: { "Cookie" => "voter_token=#{token}" }
         expect(response).to have_http_status(:ok)
-        expect(response.body).to include("投票者#1234")
-        expect(response.body).to include("累計投票")
+        expect(response.body).to include("ユーザー#1234")
+        expect(response.body).to include("累計記録")
         expect(response.body).to include("実績バッジ")
       end
 
@@ -42,8 +42,63 @@ RSpec.describe "Voter", type: :request do
       it "shows first vote badge as earned" do
         get voter_status_path, headers: { "Cookie" => "voter_token=#{token}" }
         expect(response).to have_http_status(:ok)
-        expect(response.body).to include("初投票")
+        expect(response.body).to include("初記録")
       end
+    end
+  end
+
+  describe "POST /voter/restore" do
+    it "sets cookie with valid token" do
+      shop = create(:shop)
+      machine = create(:machine_model)
+      create(:vote, voter_token: "valid_restore_token", shop: shop, machine_model: machine)
+
+      post restore_voter_token_path, params: { token: "valid_restore_token" }
+      expect(response).to redirect_to(voter_status_path)
+      expect(flash[:notice]).to include("復元")
+    end
+
+    it "shows error with invalid token" do
+      post restore_voter_token_path, params: { token: "nonexistent_token" }
+      expect(response).to redirect_to(voter_status_path)
+      expect(flash[:alert]).to be_present
+    end
+
+    it "shows error with blank token" do
+      post restore_voter_token_path, params: { token: "" }
+      expect(response).to redirect_to(voter_status_path)
+      expect(flash[:alert]).to be_present
+    end
+
+    it "shows error when token param is missing" do
+      post restore_voter_token_path
+      expect(response).to redirect_to(voter_status_path)
+      expect(flash[:alert]).to be_present
+    end
+
+    it "overwrites existing voter_token cookie when restoring a valid token" do
+      shop = create(:shop)
+      machine = create(:machine_model)
+      create(:vote, voter_token: "new_restore_token", shop: shop, machine_model: machine)
+
+      # Set an existing cookie first
+      cookies[:voter_token] = "old_existing_token"
+
+      post restore_voter_token_path, params: { token: "new_restore_token" }
+      expect(response).to redirect_to(voter_status_path)
+      expect(flash[:notice]).to include("復元")
+      # The cookie should be overwritten with the new token
+      expect(cookies[:voter_token]).to eq("new_restore_token")
+    end
+
+    it "trims whitespace from token before lookup" do
+      shop = create(:shop)
+      machine = create(:machine_model)
+      create(:vote, voter_token: "token_with_spaces", shop: shop, machine_model: machine)
+
+      post restore_voter_token_path, params: { token: "  token_with_spaces  " }
+      expect(response).to redirect_to(voter_status_path)
+      expect(flash[:notice]).to include("復元")
     end
   end
 end

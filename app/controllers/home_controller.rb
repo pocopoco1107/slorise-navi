@@ -2,11 +2,11 @@ class HomeController < ApplicationController
   include TrendData
 
   def index
-    desc = "パチスロの設定・リセット情報をみんなの投票で集める。店舗×機種×日付で設定予想を共有するサイト。"
-    set_meta_tags title: "パチスロ設定・リセット投票",
+    desc = "全国5,700店舗のパチスロ設定・リセット傾向を匿名で記録・可視化。収支カレンダーで自分のデータも管理できる無料サイト。"
+    set_meta_tags title: "パチスロ設定・リセット記録",
                   description: desc,
-                  keywords: "パチスロ, 設定, リセット, 投票, 設定判別, スロット",
-                  og: { title: "スロリセnavi - パチスロ設定・リセット投票",
+                  keywords: "パチスロ, 設定, リセット, 記録, 設定判別, スロット",
+                  og: { title: "ヨミスロ - パチスロ設定・リセット記録",
                         description: desc,
                         type: "website",
                         url: root_url },
@@ -14,16 +14,17 @@ class HomeController < ApplicationController
 
     @prefectures = Prefecture.left_joins(:shops).group(:id).select("prefectures.*, COUNT(shops.id) as shops_count").order(:id)
 
-    # Stats for hero
-    @today_votes_count = Vote.where(voted_on: Date.current).count
-    @total_votes_count = Vote.count
-    @shops_count = Shop.count
-    # 50店舗以上に設置されている全国的な現行機種のみカウント
-    @machines_count = MachineModel.active
-      .joins(:shop_machine_models)
-      .group("machine_models.id")
-      .having("COUNT(shop_machine_models.id) >= 50")
-      .count.size
+    # Stats for hero (cached to avoid full table scans on every request)
+    @today_votes_count = Rails.cache.fetch("home/today_votes", expires_in: 5.minutes) { Vote.where(voted_on: Date.current).count }
+    @total_votes_count = Rails.cache.fetch("home/total_votes", expires_in: 10.minutes) { Vote.count }
+    @shops_count = Rails.cache.fetch("home/shops_count", expires_in: 1.hour) { Shop.count }
+    @machines_count = Rails.cache.fetch("home/machines_count", expires_in: 1.hour) {
+      MachineModel.active
+        .joins(:shop_machine_models)
+        .group("machine_models.id")
+        .having("COUNT(shop_machine_models.id) >= 50")
+        .count.size
+    }
 
     # Today's hot shops — single query with JOIN to avoid N+1
     hot_shop_rows = VoteSummary.where(target_date: Date.current)
@@ -72,7 +73,7 @@ class HomeController < ApplicationController
                           .limit(10)
                           .pluck(Arel.sql("voter_token, COUNT(*) as vote_count"))
                           .map.with_index(1) { |(token, count), rank|
-                            { rank: rank, label: "投票者##{token.last(4)}", count: count }
+                            { rank: rank, label: "ユーザー##{token.last(4)}", count: count }
                           }
 
     # 7-day nationwide trend (scoped to last 7 days to avoid full table scan)
@@ -83,8 +84,32 @@ class HomeController < ApplicationController
 
     @recent_shops = Shop.includes(:prefecture).order(updated_at: :desc).limit(10)
 
+    # Play records count for pillar card
+    @play_records_count = Rails.cache.fetch("home/play_records_count", expires_in: 10.minutes) { PlayRecord.count }
+
+    # Personal play summary for mini card
+    token = cookies[:voter_token]
+    if token.present?
+      agg = PlayRecord.where(voter_token: token, played_on: Date.current.beginning_of_month..Date.current)
+                      .pick(
+                        Arel.sql("SUM(result_amount)"),
+                        Arel.sql("COUNT(DISTINCT played_on)"),
+                        Arel.sql("COUNT(*) FILTER (WHERE result_amount > 0)"),
+                        Arel.sql("COUNT(*) FILTER (WHERE result_amount < 0)")
+                      )
+      if agg&.first
+        total, days, wins, losses = agg
+        win_rate = (wins + losses) > 0 ? (wins.to_f / (wins + losses) * 100).round(0) : 0
+        @my_play_summary = { total: total.to_i, days: days.to_i, win_rate: win_rate }
+      end
+    end
+
     if params[:q].present?
       @search_results = Shop.search_by_name(params[:q]).includes(:prefecture).limit(20)
+    end
+
+    if params[:mq].present?
+      @machine_results = MachineModel.active.where("name ILIKE ?", "%#{MachineModel.sanitize_sql_like(params[:mq])}%").order(:name).limit(20)
     end
   end
 end

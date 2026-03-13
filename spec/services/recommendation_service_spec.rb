@@ -101,17 +101,17 @@ RSpec.describe RecommendationService, type: :service do
 
   describe ".generate_comment" do
     it "高設定理由のコメントを生成する" do
-      data = { reasons: [{ type: :high_setting, label: "高設定投票60%", value: 60 }] }
+      data = { reasons: [{ type: :high_setting, label: "高設定記録60%", value: 60 }] }
       comment = described_class.generate_comment(shop1, data)
       expect(comment).to include(shop1.name)
-      expect(comment).to include("高設定投票")
+      expect(comment).to include("高設定記録")
     end
 
-    it "投票量理由のコメントを生成する" do
-      data = { reasons: [{ type: :vote_volume, label: "投票が多い", value: 20 }] }
+    it "記録量理由のコメントを生成する" do
+      data = { reasons: [{ type: :vote_volume, label: "記録が多い", value: 20 }] }
       comment = described_class.generate_comment(shop1, data)
       expect(comment).to include(shop1.name)
-      expect(comment).to include("投票が集中")
+      expect(comment).to include("記録が集中")
     end
 
     it "リセット率理由のコメントを生成する" do

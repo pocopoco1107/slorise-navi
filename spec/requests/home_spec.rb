@@ -5,7 +5,7 @@ RSpec.describe "Home", type: :request do
     it "renders the home page" do
       get root_path
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("スロリセnavi")
+      expect(response.body).to include("ヨミスロ")
     end
 
     it "displays search results" do
@@ -58,13 +58,13 @@ RSpec.describe "Home", type: :request do
 
       get root_path
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("過去7日間の全国投票推移")
+      expect(response.body).to include("過去7日間の全国記録推移")
     end
 
     it "does not show trend chart when no votes exist" do
       get root_path
       expect(response).to have_http_status(:ok)
-      expect(response.body).not_to include("過去7日間の全国投票推移")
+      expect(response.body).not_to include("過去7日間の全国記録推移")
     end
 
     it "returns no search results for nonexistent shop" do

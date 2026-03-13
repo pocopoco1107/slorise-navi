@@ -89,4 +89,72 @@ module ApplicationHelper
       tag.path(d: "M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z", "stroke-linecap": "round", "stroke-linejoin": "round")
     end
   end
+
+  # --------------------------------------------------
+  # Date formatting helpers with weekday and holiday
+  # --------------------------------------------------
+
+  DAY_LABELS = %w[日 月 火 水 木 金 土].freeze
+
+  def format_date_with_weekday(date, format: :full)
+    wday_str = DAY_LABELS[date.wday]
+    case format
+    when :full
+      "#{date.strftime('%Y年%-m月%-d日')}(#{wday_str})"
+    when :short
+      "#{date.strftime('%-m/%-d')}(#{wday_str})"
+    end
+  end
+
+  def holiday_badge(date)
+    holiday = HolidayJp.between(date, date).first
+    return nil unless holiday
+
+    tag.span(
+      class: "inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive font-medium",
+      title: holiday.name
+    ) do
+      holiday.name
+    end
+  end
+
+  def holiday?(date)
+    HolidayJp.between(date, date).any?
+  end
+
+  # Aggregate daily trend data into weekly buckets for long-period charts.
+  # Returns array of hashes with :label, :date, :votes, :reset_rate, :setting_avg
+  def aggregate_weekly(days_data)
+    return days_data if days_data.size <= 14
+
+    weeks = days_data.each_slice(7).map do |week|
+      total_votes = week.sum { |d| d[:votes] }
+
+      # Weighted reset rate
+      reset_rates = week.select { |d| d[:reset_rate] }
+      avg_reset = if reset_rates.any?
+                    (reset_rates.sum { |d| d[:reset_rate] } / reset_rates.size).round(1)
+                  end
+
+      # Weighted setting average
+      settings = week.select { |d| d[:setting_avg] }
+      avg_setting = if settings.any?
+                      (settings.sum { |d| d[:setting_avg] } / settings.size).round(1)
+                    end
+
+      first_date = week.first[:date]
+      last_date = week.last[:date]
+      label = "#{first_date.strftime('%-m/%-d')}~#{last_date.strftime('%-m/%-d')}"
+
+      {
+        date: first_date,
+        label: label,
+        votes: total_votes,
+        reset_rate: avg_reset,
+        setting_avg: avg_setting
+      }
+    end
+
+    weeks
+  end
 end

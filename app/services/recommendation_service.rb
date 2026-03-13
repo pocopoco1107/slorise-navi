@@ -4,7 +4,7 @@ class RecommendationService
 
   # スコア算出の重み
   WEIGHTS = {
-    vote_volume: 0.3,     # 投票数の多さ
+    vote_volume: 0.3,     # 記録数の多さ
     high_setting: 0.3,    # 高設定割合
     reset_rate: 0.2,      # リセット率
     review_rating: 0.2    # レビュー平均評価
@@ -31,15 +31,15 @@ class RecommendationService
     primary = reasons.first
     case primary[:type]
     when :vote_volume
-      "#{shop.name}は直近で投票が集中しており注目度が高いです"
+      "#{shop.name}は直近で記録が集中しており注目度が高いです"
     when :high_setting
-      "#{shop.name}は直近で高設定投票が多く期待度が高いです"
+      "#{shop.name}は直近で高設定記録が多く期待度が高いです"
     when :reset_rate
       "#{shop.name}はリセット率が高く狙い目の可能性があります"
     when :review_rating
       "#{shop.name}はユーザー評価が高く人気の店舗です"
     else
-      "#{shop.name}は直近の投票データから注目されています"
+      "#{shop.name}は直近の記録データから注目されています"
     end
   end
 
@@ -155,12 +155,12 @@ class RecommendationService
     score = 0.0
     reasons = []
 
-    # 投票量スコア (0〜1に正規化)
+    # 記録量スコア (0〜1に正規化)
     vote_ratio = vote_stat[:total_votes] / max_votes
     vote_score = vote_ratio * WEIGHTS[:vote_volume]
     score += vote_score
     if vote_ratio >= 0.5
-      reasons << { type: :vote_volume, label: "投票が多い", value: vote_stat[:total_votes] }
+      reasons << { type: :vote_volume, label: "記録が多い", value: vote_stat[:total_votes] }
     end
 
     # 高設定割合スコア (設定4以上の割合)
@@ -170,7 +170,7 @@ class RecommendationService
       score += high_score
       if high_ratio >= 0.3
         pct = (high_ratio * 100).round
-        reasons << { type: :high_setting, label: "高設定投票#{pct}%", value: pct }
+        reasons << { type: :high_setting, label: "高設定記録#{pct}%", value: pct }
       end
     end
 

@@ -1,7 +1,7 @@
 ActiveAdmin.register Shop do
   permit_params :prefecture_id, :name, :address, :lat, :lng, :slug,
                 :exchange_rate, :total_machines, :slot_machines,
-                :business_hours, :holidays, :opened_on, :former_event_days, :notes,
+                :business_hours, :opened_on, :former_event_days, :notes,
                 :parking_spaces, :phone_number, :morning_entry, :access_info, :features,
                 :pworld_url,
                 slot_rates: []
@@ -56,7 +56,6 @@ ActiveAdmin.register Shop do
       attrs[:total_machines] = row["total_machines"] if row["total_machines"].present?
       attrs[:slot_machines] = row["slot_machines"] if row["slot_machines"].present?
       attrs[:business_hours] = row["business_hours"] if row["business_hours"].present?
-      attrs[:holidays] = row["holidays"] if row["holidays"].present?
       attrs[:former_event_days] = row["former_event_days"] if row["former_event_days"].present?
       attrs[:notes] = row["notes"] if row["notes"].present?
       attrs[:parking_spaces] = row["parking_spaces"] if row["parking_spaces"].present?
@@ -68,7 +67,7 @@ ActiveAdmin.register Shop do
 
       # Defaults for new records
       attrs[:exchange_rate] ||= "unknown_rate" if is_new
-      attrs[:holidays] ||= "年中無休" if is_new
+
 
       shop.assign_attributes(attrs)
 
@@ -112,7 +111,6 @@ ActiveAdmin.register Shop do
       row :total_machines
       row :slot_machines
       row :business_hours
-      row :holidays
       row :opened_on
       row :former_event_days
       row :notes
@@ -142,7 +140,6 @@ ActiveAdmin.register Shop do
       f.input :total_machines
       f.input :slot_machines
       f.input :business_hours, placeholder: "10:00〜22:45"
-      f.input :holidays, placeholder: "年中無休"
       f.input :opened_on, as: :datepicker
       f.input :former_event_days, placeholder: "毎月7日, 17日, 27日"
       f.input :parking_spaces

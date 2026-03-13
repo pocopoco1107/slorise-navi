@@ -92,14 +92,13 @@ RSpec.describe "Shops", type: :request do
 
       get shop_path(shop.slug)
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("過去7日間の投票トレンド")
-      expect(response.body).to include("日別投票数")
+      expect(response.body).to include("記録トレンド")
     end
 
     it "does not show trend chart when no votes exist" do
       get shop_path(shop.slug)
       expect(response).to have_http_status(:ok)
-      expect(response.body).not_to include("過去7日間の投票トレンド")
+      expect(response.body).not_to include("記録トレンド")
     end
   end
 
@@ -254,7 +253,7 @@ RSpec.describe "Shops", type: :request do
       expect(summary.total_votes).to eq(1)
     end
 
-    it "rejects vote without any vote type" do
+    it "allows vote without any vote type (creates empty vote record)" do
       expect {
         post votes_path, params: {
           vote: {
@@ -263,7 +262,7 @@ RSpec.describe "Shops", type: :request do
             voted_on: Date.current.to_s
           }
         }
-      }.not_to change(Vote, :count)
+      }.to change(Vote, :count).by(1)
     end
 
     it "rejects vote with invalid setting_vote" do

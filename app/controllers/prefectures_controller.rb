@@ -8,7 +8,7 @@ class PrefecturesController < ApplicationController
                   .select(:id, :name, :slug, :address, :exchange_rate, :slot_rates,
                           :notes, :business_hours, :parking_spaces, :morning_entry,
                           :prefecture_id, :slot_machines, :total_machines, :phone_number,
-                          :pworld_url, :features, :holidays)
+                          :pworld_url, :features)
                   .order(:address, :name)
                   .to_a
 
@@ -95,11 +95,11 @@ class PrefecturesController < ApplicationController
     # おすすめ店舗 (県内TOP3)
     @recommendations = RecommendationService.top_for_prefecture(@prefecture, limit: 3)
 
-    desc = "#{@prefecture.name}のパチスロ店舗#{@total_shops_count}件の設定・リセット投票情報一覧。"
+    desc = "#{@prefecture.name}のパチスロ店舗#{@total_shops_count}件の設定・リセット記録情報一覧。"
     set_meta_tags title: "#{@prefecture.name}のパチスロ店舗一覧",
                   description: desc,
                   keywords: "#{@prefecture.name}, パチスロ, 設定, リセット, 店舗",
-                  og: { title: "#{@prefecture.name}のパチスロ店舗一覧 | スロリセnavi",
+                  og: { title: "#{@prefecture.name}のパチスロ店舗一覧 | ヨミスロ",
                         description: desc,
                         type: "website",
                         url: request.original_url.split("?").first },

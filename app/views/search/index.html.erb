@@ -1,4 +1,4 @@
-<% content_for(:title) { "全国店舗検索 - スロリセnavi" } %>
+<% content_for(:title) { "全国店舗検索 - ヨミスロ" } %>
 
 <section class="mt-6 mb-8">
   <%# パンくずリスト %>
@@ -164,9 +164,9 @@
             <% if shop.exchange_rate != "unknown_rate" %>
               <span class="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-md
                 <%= case shop.exchange_rate
-                    when 'equal_rate' then 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                    when 'rate_56' then 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                    when 'rate_50' then 'bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                    when 'equal_rate' then 'bg-slot-green/10 text-slot-green'
+                    when 'rate_56' then 'bg-slot-yellow/10 text-slot-yellow'
+                    when 'rate_50' then 'bg-slot-yellow/15 text-slot-yellow'
                     when 'non_equal' then 'bg-secondary text-muted-foreground'
                     end %>">
                 <%= shop.exchange_rate_display %>
@@ -180,7 +180,7 @@
           <div class="flex flex-wrap items-center gap-1 mt-2">
             <% if shop.slot_rates.present? %>
               <% shop.slot_rates.each do |rate| %>
-                <span class="bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-medium px-1.5 py-0.5 rounded-md"><%= rate %></span>
+                <span class="bg-slot-blue/10 text-slot-blue text-[10px] font-medium px-1.5 py-0.5 rounded-md"><%= rate %></span>
               <% end %>
             <% end %>
             <% if shop.business_hours.present? %>
@@ -189,7 +189,7 @@
             <% if shop.notes.present? %>
               <% shop_facilities = shop.notes.split("、") %>
               <% if shop_facilities.include?("加熱式たばこ遊技OK") %>
-                <span class="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-medium px-1.5 py-0.5 rounded-md">遊技中OK</span>
+                <span class="bg-slot-green/10 text-slot-green text-[10px] font-medium px-1.5 py-0.5 rounded-md">遊技中OK</span>
               <% elsif shop_facilities.include?("加熱式たばこ喫煙室") %>
                 <span class="bg-secondary text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-md">喫煙室</span>
               <% elsif shop_facilities.include?("加熱式たばこ") %>
@@ -206,7 +206,7 @@
               <span class="bg-secondary text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-md tabular-nums">P<%= shop.parking_spaces %></span>
             <% end %>
             <% if shop.morning_entry.present? %>
-              <span class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-medium px-1.5 py-0.5 rounded-md">朝整理券</span>
+              <span class="bg-slot-yellow/10 text-slot-yellow text-[10px] font-medium px-1.5 py-0.5 rounded-md">朝整理券</span>
             <% end %>
           </div>
         <% end %>

@@ -1,4 +1,4 @@
-<% content_for(:title) { "マイステータス | スロリセnavi" } %>
+<% content_for(:title) { "マイステータス | ヨミスロ" } %>
 
 <section class="max-w-2xl mx-auto">
   <h1 class="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
@@ -9,29 +9,102 @@
   <% if @has_votes %>
     <!-- Voter Identity -->
     <div class="bg-card border border-border rounded-lg p-4 mb-4">
-      <p class="text-sm text-muted-foreground">あなたの投票者ID</p>
+      <p class="text-sm text-muted-foreground">あなたのユーザーID</p>
       <p class="text-xl font-bold text-primary mt-1"><%= @voter_label %></p>
+    </div>
+
+    <!-- 称号 -->
+    <div class="bg-gradient-to-r from-slot-yellow/10 via-card to-slot-yellow/10 border border-border rounded-lg p-5 mb-4 text-center">
+      <p class="text-xs text-muted-foreground mb-1">あなたの称号</p>
+      <p class="text-2xl font-bold text-foreground"><%= @profile.rank_title %></p>
+      <p class="text-xs text-muted-foreground text-center mt-1">記録を続けて称号をランクアップさせよう</p>
+      <% next_rank = VoterProfile.next_rank_for(@profile) %>
+      <% if next_rank %>
+        <p class="text-xs text-muted-foreground mt-2">
+          次の称号「<%= next_rank[:title] %>」まで あと<%= next_rank[:votes_needed] %>件
+          <% if next_rank[:accuracy_needed] %>
+            / 的中率<%= next_rank[:accuracy_needed] %>%以上
+          <% end %>
+        </p>
+      <% end %>
     </div>
 
     <!-- Stats -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
       <div class="bg-card border border-border rounded-lg p-4 text-center">
         <p class="text-2xl font-bold text-primary tabular-nums"><%= @total_votes_count %></p>
-        <p class="text-xs text-muted-foreground mt-1">累計投票</p>
+        <p class="text-xs text-muted-foreground mt-1">累計記録</p>
       </div>
       <div class="bg-card border border-border rounded-lg p-4 text-center">
         <p class="text-2xl font-bold text-primary tabular-nums"><%= @shops_count %></p>
-        <p class="text-xs text-muted-foreground mt-1">投票店舗</p>
+        <p class="text-xs text-muted-foreground mt-1">記録店舗</p>
       </div>
       <div class="bg-card border border-border rounded-lg p-4 text-center">
         <p class="text-2xl font-bold text-primary tabular-nums"><%= @machines_count %></p>
-        <p class="text-xs text-muted-foreground mt-1">投票機種</p>
+        <p class="text-xs text-muted-foreground mt-1">記録機種</p>
       </div>
       <div class="bg-card border border-border rounded-lg p-4 text-center">
         <p class="text-2xl font-bold text-primary tabular-nums"><%= @prefectures_count %></p>
-        <p class="text-xs text-muted-foreground mt-1">投票都道府県</p>
+        <p class="text-xs text-muted-foreground mt-1">記録都道府県</p>
       </div>
     </div>
+
+    <!-- ストリーク -->
+    <div class="bg-card border border-border rounded-lg p-4 mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold text-foreground flex items-center gap-2">
+          <span class="w-1 h-4 bg-slot-red rounded-full"></span>
+          連続記録ストリーク
+        </h2>
+        <div class="flex items-center gap-1.5">
+          <span class="text-2xl">🔥</span>
+          <span class="text-xl font-bold tabular-nums text-foreground"><%= @profile.current_streak %></span>
+          <span class="text-xs text-muted-foreground">日連続</span>
+        </div>
+      </div>
+      <!-- 7日ドットカレンダー -->
+      <div class="flex items-center justify-between gap-1">
+        <% @streak_days.each do |day| %>
+          <div class="flex flex-col items-center gap-1">
+            <span class="text-[10px] text-muted-foreground"><%= day[:label] %></span>
+            <div class="w-8 h-8 rounded-full flex items-center justify-center
+              <%= day[:voted] ? 'bg-primary text-primary-foreground' : 'bg-secondary' %>">
+              <% if day[:voted] %>
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <% if @profile.max_streak > @profile.current_streak %>
+        <p class="text-xs text-muted-foreground mt-2 text-center">最長記録: <%= @profile.max_streak %>日連続</p>
+      <% end %>
+    </div>
+
+    <!-- 的中率 -->
+    <% if @profile.accuracy_majority.present? || @profile.high_setting_rate.present? %>
+      <%
+        accuracy_cards = []
+        accuracy_cards << { value: @profile.accuracy_confirmed, color: "text-confirmed", label: "確定一致率" } if @profile.accuracy_confirmed.present?
+        accuracy_cards << { value: @profile.accuracy_majority, color: "text-primary", label: "多数派一致率" } if @profile.accuracy_majority.present?
+        accuracy_cards << { value: @profile.high_setting_rate, color: "text-slot-red", label: "高設定遭遇率" } if @profile.high_setting_rate.present?
+        grid_class = case accuracy_cards.size
+                     when 1 then "grid-cols-1"
+                     when 2 then "grid-cols-2"
+                     else "grid-cols-2 sm:grid-cols-3"
+                     end
+      %>
+      <div class="grid <%= grid_class %> gap-3 mb-6">
+        <% accuracy_cards.each do |card| %>
+          <div class="bg-card border border-border rounded-lg p-4 text-center <%= 'col-span-2 sm:col-span-1' if accuracy_cards.size == 3 && card == accuracy_cards.last %>">
+            <p class="text-2xl font-bold <%= card[:color] %> tabular-nums"><%= card[:value] %>%</p>
+            <p class="text-xs text-muted-foreground mt-1"><%= card[:label] %></p>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
 
     <!-- Badges -->
     <div class="mb-6">
@@ -63,7 +136,7 @@
     <div class="mb-6">
       <h2 class="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
         <span class="w-1 h-4 bg-vote-yes rounded-full"></span>
-        最近の投票履歴
+        最近の記録履歴
       </h2>
       <% if @recent_votes.any? %>
         <div class="bg-card border border-border rounded-lg divide-y divide-border">
@@ -86,23 +159,58 @@
                     設定<%= vote.setting_vote %>
                   </span>
                 <% end %>
-                <p class="text-[10px] text-muted-foreground mt-0.5"><%= vote.voted_on.strftime("%m/%d") %></p>
+                <p class="text-[10px] text-muted-foreground mt-0.5"><%= format_date_with_weekday(vote.voted_on, format: :short) %></p>
               </div>
             </div>
           <% end %>
         </div>
       <% else %>
-        <p class="text-sm text-muted-foreground text-center py-4">投票履歴がありません</p>
+        <p class="text-sm text-muted-foreground text-center py-4">記録履歴がありません</p>
       <% end %>
+    </div>
+
+    <!-- Token Backup -->
+    <div class="bg-card border border-border rounded-lg p-4 mb-6">
+      <h2 class="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+        <span class="w-1 h-4 bg-slot-blue rounded-full"></span>
+        トークンバックアップ
+      </h2>
+      <p class="text-xs text-muted-foreground mb-3">
+        Cookieが消えるとデータにアクセスできなくなります。トークンを控えておくことをおすすめします。
+      </p>
+      <div class="flex items-center gap-2">
+        <code class="flex-1 bg-secondary text-foreground text-xs px-3 py-2 rounded font-mono select-all overflow-x-auto">
+          <%= cookies[:voter_token] %>
+        </code>
+        <button type="button"
+                onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent.trim()).then(() => { this.textContent = 'コピー済み'; setTimeout(() => this.textContent = 'コピー', 2000); })"
+                class="shrink-0 bg-primary text-primary-foreground px-4 py-2.5 rounded text-xs font-medium hover:bg-primary/90 active:scale-95 transition-all min-h-[44px]">
+          コピー
+        </button>
+      </div>
     </div>
 
   <% else %>
     <!-- No votes yet -->
     <div class="bg-card border border-border rounded-lg p-8 text-center">
       <p class="text-4xl mb-3">🎰</p>
-      <h2 class="text-base font-semibold text-foreground mb-2">まだ投票していません</h2>
-      <p class="text-sm text-muted-foreground mb-4">店舗ページから投票すると、ここにあなたの投票統計とバッジが表示されます。</p>
-      <%= link_to "都道府県から店舗を探す", root_path, class: "inline-block bg-primary text-primary-foreground px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 active:scale-95 transition-all duration-150 min-h-[44px]" %>
+      <h2 class="text-base font-semibold text-foreground mb-2">はじめての記録で称号GET!</h2>
+      <p class="text-sm text-muted-foreground mb-4">店舗ページでリセット予想や設定読みをワンタップ記録。<br>記録するだけで「見習い」→「記録者」→「常連」...と称号がランクアップします。</p>
+      <%= link_to "店舗を探して記録する", root_path(anchor: "prefectures"), class: "inline-block bg-primary text-primary-foreground px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 active:scale-95 transition-all duration-150 min-h-[44px]" %>
+    </div>
+
+    <!-- Token Restore -->
+    <div class="bg-card border border-border rounded-lg p-4 mt-4">
+      <h2 class="text-sm font-bold text-foreground mb-2">トークン復元</h2>
+      <p class="text-xs text-muted-foreground mb-3">以前のトークンをお持ちの場合、ここから復元できます。</p>
+      <%= form_tag restore_voter_token_path, method: :post, class: "flex items-center gap-2" do %>
+        <input type="text" name="token" placeholder="トークンを入力"
+               class="flex-1 bg-secondary border border-border text-foreground text-sm px-3 py-2.5 rounded focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none min-h-[44px]"
+               required>
+        <button type="submit" class="shrink-0 bg-primary text-primary-foreground px-4 py-2.5 rounded text-sm font-medium hover:bg-primary/90 active:scale-95 transition-all min-h-[44px]">
+          復元
+        </button>
+      <% end %>
     </div>
   <% end %>
 </section>

@@ -1,0 +1,129 @@
+<turbo-frame id="trend_chart_frame">
+  <% if trend_data.present? && trend_data.any? { |d| d[:votes] > 0 } %>
+    <%
+      # For periods > 14 days, show weekly aggregation
+      display_data = if trend_data.size > 14
+        aggregate_weekly(trend_data)
+      else
+        trend_data
+      end
+      chart_label = case period
+                    when "7" then "日別"
+                    when "30" then trend_data.size > 14 ? "週別" : "日別"
+                    when "all" then trend_data.size > 14 ? "週別" : "日別"
+                    end
+    %>
+
+    <%# === Bar Chart: Vote Count === %>
+    <div class="mb-4">
+      <p class="text-[10px] text-muted-foreground mb-1.5"><%= chart_label %>記録数</p>
+      <% max_votes = display_data.map { |d| d[:votes] }.max %>
+      <% max_votes = 1 if max_votes.nil? || max_votes == 0 %>
+      <div class="flex items-end gap-1 h-24 overflow-x-auto scrollbar-hide">
+        <% display_data.each do |day| %>
+          <div class="flex flex-col items-center justify-end h-full" style="min-width: <%= [100.0 / display_data.size, 2].max %>%; flex: 1;">
+            <% pct = (day[:votes].to_f / max_votes * 100).round %>
+            <span class="text-[9px] font-semibold text-foreground mb-0.5 tabular-nums"><%= day[:votes] %></span>
+            <div class="w-full rounded-t bg-primary transition-all duration-300"
+                 style="height: <%= pct > 0 ? [pct, 4].max : 0 %>%"></div>
+            <span class="text-[8px] <%= day[:date].is_a?(Date) && holiday?(day[:date]) ? 'text-destructive' : 'text-muted-foreground' %> mt-1 leading-none whitespace-nowrap">
+              <%= if day[:label].present?
+                    day[:label]
+                  elsif day[:date].is_a?(Date)
+                    format_date_with_weekday(day[:date], format: :short)
+                  end %>
+            </span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# === Line Chart: Reset Rate === %>
+    <div class="mb-4">
+      <p class="text-[10px] text-muted-foreground mb-1.5">リセット率推移 (%)</p>
+      <div class="relative h-20">
+        <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+          <div class="border-b border-dashed border-border flex items-center">
+            <span class="text-[8px] text-muted-foreground -ml-0.5">100</span>
+          </div>
+          <div class="border-b border-dashed border-border flex items-center">
+            <span class="text-[8px] text-muted-foreground -ml-0.5">50</span>
+          </div>
+          <div></div>
+        </div>
+        <div class="absolute inset-0 flex items-end overflow-x-auto scrollbar-hide">
+          <% display_data.each do |day| %>
+            <div class="flex-1 flex flex-col items-center justify-end h-full relative" style="min-width: <%= [100.0 / display_data.size, 2].max %>%;">
+              <% if day[:reset_rate] %>
+                <% y_pct = day[:reset_rate] %>
+                <div class="absolute w-2.5 h-2.5 rounded-full bg-vote-yes border-2 border-card shadow-sm"
+                     style="bottom: <%= y_pct %>%; transform: translateY(50%)"></div>
+                <div class="absolute text-[8px] font-semibold text-vote-yes"
+                     style="bottom: <%= [y_pct + 8, 90].min %>%; transform: translateY(50%)"><%= day[:reset_rate].round %>%</div>
+              <% else %>
+                <div class="absolute bottom-0 text-[8px] text-muted-foreground">-</div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# === Line Chart: Setting Average === %>
+    <div>
+      <p class="text-[10px] text-muted-foreground mb-1.5">設定平均推移</p>
+      <div class="relative h-20">
+        <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+          <div class="border-b border-dashed border-border flex items-center">
+            <span class="text-[8px] text-muted-foreground -ml-0.5">6</span>
+          </div>
+          <div class="border-b border-dashed border-border flex items-center">
+            <span class="text-[8px] text-muted-foreground -ml-0.5">3</span>
+          </div>
+          <div></div>
+        </div>
+        <div class="absolute inset-0 flex items-end overflow-x-auto scrollbar-hide">
+          <% display_data.each do |day| %>
+            <div class="flex-1 flex flex-col items-center justify-end h-full relative" style="min-width: <%= [100.0 / display_data.size, 2].max %>%;">
+              <% if day[:setting_avg] %>
+                <% y_pct = ((day[:setting_avg] - 1).to_f / 5 * 100).clamp(0, 100) %>
+                <%
+                  dot_color = case day[:setting_avg]
+                              when 0..2 then 'bg-setting-1'
+                              when 2..4 then 'bg-setting-4'
+                              else 'bg-setting-6'
+                              end
+                %>
+                <div class="absolute w-2.5 h-2.5 rounded-full <%= dot_color %> border-2 border-card shadow-sm"
+                     style="bottom: <%= y_pct %>%; transform: translateY(50%)"></div>
+                <div class="absolute text-[8px] font-semibold text-muted-foreground"
+                     style="bottom: <%= [y_pct + 8, 90].min %>%; transform: translateY(50%)"><%= day[:setting_avg] %></div>
+              <% else %>
+                <div class="absolute text-[8px] text-muted-foreground" style="bottom: 0">-</div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Date labels %>
+    <div class="flex mt-1 overflow-x-auto scrollbar-hide">
+      <% display_data.each do |day| %>
+        <div class="flex-1 text-center" style="min-width: <%= [100.0 / display_data.size, 2].max %>%;">
+          <span class="text-[8px] <%= day[:date].is_a?(Date) && holiday?(day[:date]) ? 'text-destructive' : 'text-muted-foreground' %> whitespace-nowrap">
+            <%= if day[:label].present?
+                  day[:label]
+                elsif day[:date].is_a?(Date)
+                  format_date_with_weekday(day[:date], format: :short)
+                end %>
+          </span>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="py-8 text-center">
+      <p class="text-sm text-muted-foreground">この期間のデータはありません</p>
+    </div>
+  <% end %>
+</turbo-frame>

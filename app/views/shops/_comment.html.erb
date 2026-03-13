@@ -2,6 +2,12 @@
   <div class="flex items-center justify-between mb-1">
     <div class="flex items-center gap-2">
       <span class="text-sm font-medium text-foreground"><%= comment.display_name %></span>
+      <% if comment.voter_token.present? %>
+        <% commenter_profile = VoterProfile.find_by(voter_token: comment.voter_token) %>
+        <% if commenter_profile && commenter_profile.rank_title != "見習い" %>
+          <span class="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slot-yellow/10 text-slot-yellow"><%= commenter_profile.rank_title %></span>
+        <% end %>
+      <% end %>
       <span class="text-xs text-muted-foreground"><%= comment.created_at.strftime("%-H:%M") %></span>
     </div>
     <div id="report_flash">

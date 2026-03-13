@@ -1,5 +1,5 @@
 <div id="shop_comments">
-  <h2 class="text-lg font-bold text-foreground mb-3">コメント (<%= date.strftime("%-m/%-d") %>)</h2>
+  <h2 class="text-lg font-bold text-foreground mb-3">コメント (<%= format_date_with_weekday(date, format: :short) %>)</h2>
 
   <!-- Comment Form -->
   <turbo-frame id="comment_form">

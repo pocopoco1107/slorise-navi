@@ -1,6 +1,6 @@
 {
-  "name": "スロリセnavi",
-  "short_name": "スロリセ",
+  "name": "ヨミスロ",
+  "short_name": "ヨミスロ",
   "description": "パチスロの設定・リセット情報を集合知で蓄積するサイト",
   "start_url": "/",
   "display": "standalone",

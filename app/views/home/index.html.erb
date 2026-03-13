@@ -1,4 +1,4 @@
-<% content_for(:title) { "スロリセnavi - パチスロリセット・設定判別の投票サイト" } %>
+<% content_for(:title) { "ヨミスロ - パチスロ設定・リセット記録 & 収支管理" } %>
 
 <%# JSON-LD structured data for WebSite %>
 <% content_for(:head) do %>
@@ -6,9 +6,9 @@
     <%= raw({
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "スロリセnavi",
+      "name": "ヨミスロ",
       "url": root_url,
-      "description": "パチスロの設定・リセット情報をみんなの投票で集める集合知サイト",
+      "description": "全国5,700店舗のパチスロ設定・リセット傾向を匿名で記録・可視化。収支カレンダーで自分のデータも管理できる無料サイト。",
       "potentialAction": {
         "@type": "SearchAction",
         "target": "#{root_url}search?q={search_term_string}",
@@ -19,87 +19,301 @@
 <% end %>
 
 <!-- ============================================
-     Hero Section
+     Hero Section (with integrated search)
      ============================================ -->
-<section class="relative pb-12 pt-12 md:pb-16 md:pt-20">
-  <!-- Subtle gradient background -->
-  <div class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-primary/5 via-transparent to-transparent"></div>
+<section class="relative pb-12 pt-12 md:pb-16 md:pt-20 overflow-hidden">
+  <!-- Multi-color gradient background inspired by slot reels -->
+  <div class="pointer-events-none absolute inset-0 -z-10">
+    <div class="absolute inset-0 bg-gradient-to-br from-slot-blue/8 via-transparent to-slot-red/5"></div>
+    <div class="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-bl from-slot-yellow/6 via-transparent to-transparent"></div>
+    <div class="absolute bottom-0 left-0 w-1/3 h-1/2 bg-gradient-to-tr from-slot-green/6 via-transparent to-transparent"></div>
+  </div>
 
   <div class="flex flex-col gap-8 max-w-6xl mx-auto px-4">
     <div class="flex flex-col gap-4">
-      <h1 class="text-balance text-3xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
-        今日の稼働状況<br>
-        <span class="text-primary">みんなで集めよう</span>
+      <h1 class="text-balance text-4xl font-bold text-foreground md:text-6xl" style="font-family: 'Uzura', sans-serif;">
+        <span class="bg-gradient-to-r from-slot-blue via-slot-green to-slot-yellow bg-clip-text text-transparent">みんなの記録</span>で傾向が見える
       </h1>
-      <p class="max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-        パチスロのリセット・設定情報を投票。
-        みんなの投票でお店の傾向が見えてくる。
+      <p class="max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
+        収支記録で傾向をつかもう！
       </p>
     </div>
 
+    <!-- Search in Hero -->
+    <div class="w-full max-w-xl flex flex-col gap-3">
+      <%# 店舗検索 %>
+      <%= form_tag root_path, method: :get, data: { turbo_frame: "search_results" }, class: "relative w-full" do %>
+        <svg class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <input type="search" name="q" value="<%= params[:q] %>"
+               placeholder="店舗名で検索"
+               autocomplete="off"
+               aria-label="店舗名で検索"
+               class="h-12 w-full rounded-lg border border-border bg-card pl-12 pr-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none md:h-14 md:text-lg transition-colors">
+      <% end %>
+
+      <%# 機種検索 %>
+      <%= form_tag root_path, method: :get, data: { turbo_frame: "machine_search_results" }, class: "relative w-full" do %>
+        <svg class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 3l-4 4-4-4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <input type="search" name="mq" value="<%= params[:mq] %>"
+               placeholder="機種名で検索"
+               autocomplete="off"
+               aria-label="機種名で検索"
+               class="h-12 w-full rounded-lg border border-border bg-card pl-12 pr-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none md:h-14 md:text-lg transition-colors">
+      <% end %>
+
+      <%# 店舗検索結果 %>
+      <turbo-frame id="search_results">
+        <% if params[:q].present? && @search_results %>
+          <div class="bg-card rounded-lg border border-border p-4">
+            <h2 class="text-sm font-semibold text-muted-foreground mb-3">
+              「<%= params[:q] %>」の店舗検索結果 (<%= @search_results.size %>件)
+            </h2>
+            <% if @search_results.any? %>
+              <ul class="divide-y divide-border">
+                <% @search_results.each do |shop| %>
+                  <li class="py-2">
+                    <%= link_to shop_path(shop.slug), class: "flex justify-between items-center hover:bg-secondary -mx-2 px-2 py-2.5 rounded transition-colors duration-150 min-h-[44px]", data: { turbo_frame: "_top" } do %>
+                      <span class="font-medium text-sm text-foreground"><%= shop.name %></span>
+                      <span class="text-xs text-muted-foreground"><%= shop.prefecture.name %></span>
+                    <% end %>
+                  </li>
+                <% end %>
+              </ul>
+            <% else %>
+              <p class="text-sm text-muted-foreground text-center py-4">該当する店舗が見つかりませんでした。</p>
+            <% end %>
+          </div>
+        <% end %>
+      </turbo-frame>
+
+      <%# 機種検索結果 %>
+      <turbo-frame id="machine_search_results">
+        <% if params[:mq].present? && @machine_results %>
+          <div class="bg-card rounded-lg border border-border p-4">
+            <h2 class="text-sm font-semibold text-muted-foreground mb-3">
+              「<%= params[:mq] %>」の機種検索結果 (<%= @machine_results.size %>件)
+            </h2>
+            <% if @machine_results.any? %>
+              <ul class="divide-y divide-border">
+                <% @machine_results.each do |machine| %>
+                  <li class="py-2">
+                    <%= link_to machine_path(machine.slug), class: "flex justify-between items-center hover:bg-secondary -mx-2 px-2 py-2.5 rounded transition-colors duration-150 min-h-[44px]", data: { turbo_frame: "_top" } do %>
+                      <span class="font-medium text-sm text-foreground"><%= machine.name %></span>
+                      <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md <%= machine.display_type_badge_class %>"><%= machine.display_type_label %></span>
+                    <% end %>
+                  </li>
+                <% end %>
+              </ul>
+            <% else %>
+              <p class="text-sm text-muted-foreground text-center py-4">該当する機種が見つかりませんでした。</p>
+            <% end %>
+          </div>
+        <% end %>
+      </turbo-frame>
+
+      <!-- Nearby Shops -->
+      <div class="mt-4" data-controller="nearby">
+        <button type="button"
+                data-nearby-target="button"
+                data-action="click->nearby#locate"
+                class="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary hover:border-primary/50 active:scale-95 transition-all duration-150 min-h-[44px]">
+          <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span data-nearby-target="buttonText">現在地から探す</span>
+          <svg data-nearby-target="spinner" class="hidden h-4 w-4 animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+        </button>
+        <p data-nearby-target="error" class="hidden mt-2 text-sm text-destructive"></p>
+
+        <%# 位置情報が使えない場合のフォールバック: 都道府県セレクト %>
+        <div data-nearby-target="fallback" class="hidden mt-3">
+          <div class="flex items-center gap-2">
+            <svg class="h-5 w-5 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <select data-action="change->nearby#goToPrefecture"
+                    class="flex-1 h-11 rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none transition-colors">
+              <option value="">都道府県を選んで探す</option>
+              <% @prefectures.each do |pref| %>
+                <option value="<%= pref.slug %>"><%= pref.name %><%= " (#{pref.shops_count}店)" if pref.respond_to?(:shops_count) && pref.shops_count > 0 %></option>
+              <% end %>
+            </select>
+          </div>
+        </div>
+
+        <turbo-frame id="nearby_results"></turbo-frame>
+      </div>
+    </div>
+
     <!-- Hero Stats -->
-    <div class="flex flex-wrap items-center gap-x-8 gap-y-4">
-      <div class="flex items-baseline gap-2">
-        <span class="text-2xl font-bold tabular-nums tracking-tight text-foreground md:text-3xl"><%= number_with_delimiter(@total_votes_count) %></span>
-        <span class="text-sm text-muted-foreground">累計投票数</span>
+    <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
+      <div class="flex items-baseline gap-2 rounded-lg bg-slot-red/10 px-4 py-2">
+        <span class="text-2xl font-bold tabular-nums tracking-tight text-slot-red md:text-3xl"><%= number_with_delimiter(@today_votes_count) %></span>
+        <span class="text-sm text-muted-foreground">今日の記録</span>
       </div>
-      <div class="flex items-baseline gap-2">
-        <span class="text-2xl font-bold tabular-nums tracking-tight text-foreground md:text-3xl"><%= number_with_delimiter(@shops_count) %></span>
-        <span class="text-sm text-muted-foreground">登録店舗</span>
+      <div class="flex items-baseline gap-2 rounded-lg bg-slot-blue/10 px-4 py-2">
+        <span class="text-2xl font-bold tabular-nums tracking-tight text-slot-blue md:text-3xl"><%= number_with_delimiter(@total_votes_count) %></span>
+        <span class="text-sm text-muted-foreground">累計記録</span>
       </div>
-      <div class="flex items-baseline gap-2">
-        <span class="text-2xl font-bold tabular-nums tracking-tight text-foreground md:text-3xl"><%= number_with_delimiter(@today_votes_count) %></span>
-        <span class="text-sm text-muted-foreground">今日の投票</span>
+      <span class="text-muted-foreground/50 hidden sm:inline">|</span>
+      <div class="flex items-center gap-4 text-sm text-muted-foreground">
+        <span><%= number_with_delimiter(@shops_count) %> 店舗</span>
+        <span><%= number_with_delimiter(@machines_count) %> 機種</span>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ============================================
-     Search Bar
+     Two Pillars: リセ・設定 × 収支統計
      ============================================ -->
 <section class="pb-10 md:pb-14 max-w-6xl mx-auto px-4">
-  <%= form_tag root_path, method: :get, data: { turbo_frame: "search_results" }, class: "relative w-full" do %>
-    <svg class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-      <circle cx="11" cy="11" r="8"/>
-      <path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
-    </svg>
-    <input type="search" name="q" value="<%= params[:q] %>"
-           placeholder="店舗名・機種名で検索"
-           autocomplete="off"
-           aria-label="店舗名・機種名で検索"
-           class="h-12 w-full rounded-lg border border-border bg-card pl-12 pr-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none md:h-14 md:text-lg transition-colors">
-  <% end %>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- Pillar 1: リセ・設定情報 -->
+    <div class="relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-slot-blue/10 via-card to-slot-green/5 p-5">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-slot-blue/15">
+          <svg class="h-4 w-4 text-slot-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2 class="text-base font-semibold text-foreground">リセット・設定情報</h2>
+      </div>
+      <p class="text-sm text-muted-foreground mb-3">朝イチのリセット判別、夕方の高設定狙い。みんなの記録で精度が上がる。</p>
+      <div class="flex items-baseline gap-2 mb-4">
+        <span class="text-2xl font-bold tabular-nums text-slot-blue"><%= number_with_delimiter(@today_votes_count) %></span>
+        <span class="text-xs text-muted-foreground">今日の記録</span>
+      </div>
+      <%= link_to root_path(anchor: "prefectures"), class: "inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline" do %>
+        店舗を探して記録する
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <% end %>
+    </div>
 
-  <turbo-frame id="search_results">
-    <% if params[:q].present? && @search_results %>
-      <div class="mt-3 bg-card rounded-lg border border-border p-4">
-        <h2 class="text-sm font-semibold text-muted-foreground mb-3">
-          「<%= params[:q] %>」の検索結果 (<%= @search_results.size %>件)
+    <!-- Pillar 2: 収支統計 -->
+    <div class="relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-slot-yellow/10 via-card to-slot-red/5 p-5">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-slot-yellow/15">
+          <svg class="h-4 w-4 text-slot-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2 class="text-base font-semibold text-foreground">収支カレンダー</h2>
+      </div>
+      <p class="text-sm text-muted-foreground mb-3">毎日の結果を記録するだけで月間収支・勝率を自動集計。みんなのデータが全国統計にもなる。</p>
+      <div class="flex items-baseline gap-2 mb-4">
+        <span class="text-2xl font-bold tabular-nums text-slot-yellow"><%= number_with_delimiter(@play_records_count) %></span>
+        <span class="text-xs text-muted-foreground">累計記録</span>
+      </div>
+      <%= link_to play_records_path, class: "inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline" do %>
+        今日の収支を記録する
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     My Play Record Mini Card (if logged in via cookie)
+     ============================================ -->
+<% if @my_play_summary %>
+  <section class="pb-8 md:pb-12 max-w-6xl mx-auto px-4">
+    <div class="rounded-lg border border-border bg-gradient-to-r from-slot-green/5 via-card to-slot-yellow/5 p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-sm font-semibold text-foreground flex items-center gap-2">
+          <svg class="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          今月の収支
         </h2>
-        <% if @search_results.any? %>
-          <ul class="divide-y divide-border">
-            <% @search_results.each do |shop| %>
-              <li class="py-2">
-                <%= link_to shop_path(shop.slug), class: "flex justify-between items-center hover:bg-secondary -mx-2 px-2 py-2.5 rounded transition-colors duration-150 min-h-[44px]", data: { turbo_frame: "_top" } do %>
-                  <span class="font-medium text-sm text-foreground"><%= shop.name %></span>
-                  <span class="text-xs text-muted-foreground"><%= shop.prefecture.name %></span>
-                <% end %>
-              </li>
-            <% end %>
-          </ul>
-        <% else %>
-          <div class="py-6 flex flex-col items-center">
-            <svg class="w-12 h-12 text-muted-foreground/40 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
-            </svg>
-            <p class="text-sm text-muted-foreground">該当する店舗が見つかりませんでした。</p>
-          </div>
+        <%= link_to play_records_path, class: "text-xs text-primary hover:underline" do %>
+          詳しく見る →
         <% end %>
       </div>
-    <% end %>
-  </turbo-frame>
+      <div class="flex items-center gap-6">
+        <div>
+          <span class="text-xl font-bold tabular-nums <%= @my_play_summary[:total] >= 0 ? 'text-primary' : 'text-destructive' %>">
+            <%= @my_play_summary[:total] >= 0 ? '+' : '' %><%= number_with_delimiter(@my_play_summary[:total]) %>円
+          </span>
+        </div>
+        <div class="text-xs text-muted-foreground">
+          稼働<%= @my_play_summary[:days] %>日 / 勝率<%= @my_play_summary[:win_rate] %>%
+        </div>
+      </div>
+      <div class="mt-2">
+        <%= link_to play_records_path, class: "inline-flex items-center justify-center gap-1 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 active:scale-95 transition-all duration-150 min-h-[44px]" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M12 4v16m8-8H4" stroke-linecap="round"/></svg>
+          今日の収支を記録
+        <% end %>
+      </div>
+    </div>
+  </section>
+<% end %>
+
+<!-- ============================================
+     Today's Data (Hot Shops + High Reset)
+     ============================================ -->
+<section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- Hot Shops -->
+    <div class="rounded-lg border border-border bg-card p-4">
+      <div class="mb-3 flex items-center gap-2">
+        <div class="h-2 w-2 rounded-full bg-slot-red"></div>
+        <h2 class="text-sm font-semibold text-foreground">今日の注目店舗</h2>
+      </div>
+      <% if @hot_shops.any? %>
+        <ol class="space-y-2">
+          <% @hot_shops.each_with_index do |item, i| %>
+            <li class="flex items-center gap-2">
+              <span class="text-xs font-bold tabular-nums w-4 text-muted-foreground"><%= i + 1 %></span>
+              <%= link_to shop_path(item[:shop].slug), class: "text-sm font-medium text-primary hover:underline truncate flex-1", data: { turbo_frame: "_top" } do %>
+                <%= item[:shop].name %>
+              <% end %>
+              <span class="text-xs tabular-nums text-muted-foreground shrink-0"><%= item[:votes] %>件</span>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="text-xs text-muted-foreground py-4 text-center">今日の記録データはまだありません</p>
+      <% end %>
+    </div>
+
+    <!-- High Reset Rate -->
+    <div class="rounded-lg border border-border bg-card p-4">
+      <div class="mb-3 flex items-center gap-2">
+        <div class="h-2 w-2 rounded-full bg-slot-blue"></div>
+        <h2 class="text-sm font-semibold text-foreground">今日リセット率が高い機種</h2>
+      </div>
+      <% if @high_reset_machines.any? %>
+        <ol class="space-y-2">
+          <% @high_reset_machines.each_with_index do |item, i| %>
+            <li class="flex items-center gap-2">
+              <span class="text-xs font-bold tabular-nums w-4 text-muted-foreground"><%= i + 1 %></span>
+              <div class="flex-1 min-w-0">
+                <%= link_to machine_path(item[:machine].slug), class: "text-sm font-medium text-primary hover:underline truncate block", data: { turbo_frame: "_top" } do %>
+                  <%= item[:machine].name %>
+                <% end %>
+                <span class="text-xs text-muted-foreground"><%= item[:shop].name %></span>
+              </div>
+              <span class="text-xs font-semibold tabular-nums text-primary shrink-0"><%= item[:rate] %>%</span>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="text-xs text-muted-foreground py-4 text-center">今日のリセットデータはまだありません</p>
+      <% end %>
+    </div>
+  </div>
 </section>
 
 <!-- ============================================
@@ -108,7 +322,7 @@
 <% if @hot_shops.any? %>
   <section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4" data-controller="carousel">
     <div class="mb-4 flex items-center gap-2">
-      <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <svg class="h-5 w-5 text-slot-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
         <polyline points="17 6 23 6 23 12"/>
       </svg>
@@ -141,9 +355,9 @@
             </div>
             <div class="flex items-end justify-between">
               <div class="flex flex-col gap-0.5">
-                <span class="text-xs text-muted-foreground">今日の投票</span>
+                <span class="text-xs text-muted-foreground">今日の記録</span>
                 <span class="text-lg font-semibold tabular-nums text-foreground">
-                  <%= item[:votes] %><span class="text-xs font-normal text-muted-foreground ml-0.5">票</span>
+                  <%= item[:votes] %><span class="text-xs font-normal text-muted-foreground ml-0.5">件</span>
                 </span>
               </div>
             </div>
@@ -173,7 +387,7 @@
 <section class="pb-10 md:pb-14 max-w-6xl mx-auto px-4" data-controller="favorites-list">
   <div data-favorites-list-target="container" class="hidden">
     <div class="mb-4 flex items-center gap-2">
-      <svg class="h-5 w-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+      <svg class="h-5 w-5 text-slot-yellow" fill="currentColor" viewBox="0 0 24 24">
         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
       </svg>
       <h2 class="text-lg font-semibold tracking-tight text-foreground">お気に入り店舗</h2>
@@ -188,7 +402,7 @@
 <% if @recommendations.present? %>
   <section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4">
     <div class="mb-4 flex items-center gap-2">
-      <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <svg class="h-5 w-5 text-slot-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
         <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <h2 class="text-lg font-semibold tracking-tight text-foreground">今日のおすすめ店舗</h2>
@@ -233,57 +447,45 @@
 <% end %>
 
 <!-- ============================================
-     Today's Data (Hot Shops + High Reset)
+     Weekly Voter Ranking + Status
      ============================================ -->
 <section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4">
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <!-- Hot Shops -->
     <div class="rounded-lg border border-border bg-card p-4">
       <div class="mb-3 flex items-center gap-2">
-        <div class="h-1 w-1 rounded-full bg-destructive"></div>
-        <h2 class="text-sm font-semibold text-foreground">今日の注目店舗</h2>
+        <div class="h-2 w-2 rounded-full bg-slot-yellow"></div>
+        <h2 class="text-sm font-semibold text-foreground">週間記録ランキング</h2>
       </div>
-      <% if @hot_shops.any? %>
+      <% if @weekly_ranking.any? %>
         <ol class="space-y-2">
-          <% @hot_shops.each_with_index do |item, i| %>
+          <% @weekly_ranking.each do |entry| %>
             <li class="flex items-center gap-2">
-              <span class="text-xs font-bold tabular-nums w-4 text-muted-foreground"><%= i + 1 %></span>
-              <%= link_to shop_path(item[:shop].slug), class: "text-sm font-medium text-primary hover:underline truncate flex-1", data: { turbo_frame: "_top" } do %>
-                <%= item[:shop].name %>
-              <% end %>
-              <span class="text-xs tabular-nums text-muted-foreground shrink-0"><%= item[:votes] %>票</span>
+              <span class="text-xs font-bold tabular-nums w-4 shrink-0 <%= case entry[:rank] when 1 then 'text-yellow-500' when 2 then 'text-muted-foreground' when 3 then 'text-amber-700' else 'text-muted-foreground' end %>">
+                <%= entry[:rank] %>
+              </span>
+              <span class="text-sm font-medium text-foreground flex-1 truncate"><%= entry[:label] %></span>
+              <span class="text-xs tabular-nums text-muted-foreground shrink-0"><%= entry[:count] %>件</span>
             </li>
           <% end %>
         </ol>
       <% else %>
-        <p class="text-xs text-muted-foreground py-4 text-center">今日の投票データはまだありません</p>
+        <p class="text-xs text-muted-foreground py-4 text-center">今週の記録データはまだありません</p>
       <% end %>
+      <div class="mt-3 text-center">
+        <%= link_to "すべて見る →", rankings_path, class: "text-xs text-primary hover:underline" %>
+      </div>
     </div>
 
-    <!-- High Reset Rate -->
-    <div class="rounded-lg border border-border bg-card p-4">
-      <div class="mb-3 flex items-center gap-2">
-        <div class="h-1 w-1 rounded-full bg-primary"></div>
-        <h2 class="text-sm font-semibold text-foreground">今日リセット率が高い機種</h2>
+    <div class="rounded-lg border border-border bg-gradient-to-br from-slot-blue/5 via-slot-green/5 to-slot-yellow/5 p-4 flex flex-col items-center justify-center text-center">
+      <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slot-yellow/15 mb-3">
+        <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path d="M12 15l-2 5-1-3-3-1 5-2zM12 15l2 5 1-3 3-1-5-2z" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 7a4 4 0 118 0 4 4 0 01-8 0z" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
-      <% if @high_reset_machines.any? %>
-        <ol class="space-y-2">
-          <% @high_reset_machines.each_with_index do |item, i| %>
-            <li class="flex items-center gap-2">
-              <span class="text-xs font-bold tabular-nums w-4 text-muted-foreground"><%= i + 1 %></span>
-              <div class="flex-1 min-w-0">
-                <%= link_to machine_path(item[:machine].slug), class: "text-sm font-medium text-primary hover:underline truncate block", data: { turbo_frame: "_top" } do %>
-                  <%= item[:machine].name %>
-                <% end %>
-                <span class="text-xs text-muted-foreground"><%= item[:shop].name %></span>
-              </div>
-              <span class="text-xs font-semibold tabular-nums text-primary shrink-0"><%= item[:rate] %>%</span>
-            </li>
-          <% end %>
-        </ol>
-      <% else %>
-        <p class="text-xs text-muted-foreground py-4 text-center">今日のリセットデータはまだありません</p>
-      <% end %>
+      <h2 class="text-sm font-semibold text-foreground mb-1">称号を獲得しよう</h2>
+      <p class="text-xs text-muted-foreground mb-4">記録を続けると称号がランクアップ。的中率もトラッキング。</p>
+      <%= link_to "ステータスを見る", voter_status_path, class: "inline-flex items-center justify-center bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 active:scale-95 transition-all duration-150 min-h-[44px]" %>
     </div>
   </div>
 </section>
@@ -294,7 +496,7 @@
 <% if @trend_data&.any? { |d| d[:votes] > 0 } %>
   <section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4">
     <%= render "shared/trend_chart",
-        title: "過去7日間の全国投票推移",
+        title: "過去7日間の全国記録推移",
         days_data: @trend_data,
         show_reset: false,
         show_setting: false,
@@ -303,50 +505,9 @@
 <% end %>
 
 <!-- ============================================
-     Weekly Voter Ranking + Status
-     ============================================ -->
-<section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4">
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <div class="rounded-lg border border-border bg-card p-4">
-      <div class="mb-3 flex items-center gap-2">
-        <div class="h-1 w-1 rounded-full bg-secondary"></div>
-        <h2 class="text-sm font-semibold text-foreground">週間投票ランキング</h2>
-      </div>
-      <% if @weekly_ranking.any? %>
-        <ol class="space-y-2">
-          <% @weekly_ranking.each do |entry| %>
-            <li class="flex items-center gap-2">
-              <span class="text-xs font-bold tabular-nums w-4 shrink-0 <%= case entry[:rank] when 1 then 'text-yellow-500' when 2 then 'text-muted-foreground' when 3 then 'text-amber-700' else 'text-muted-foreground' end %>">
-                <%= entry[:rank] %>
-              </span>
-              <span class="text-sm font-medium text-foreground flex-1 truncate"><%= entry[:label] %></span>
-              <span class="text-xs tabular-nums text-muted-foreground shrink-0"><%= entry[:count] %>票</span>
-            </li>
-          <% end %>
-        </ol>
-      <% else %>
-        <p class="text-xs text-muted-foreground py-4 text-center">今週の投票データはまだありません</p>
-      <% end %>
-    </div>
-
-    <div class="rounded-lg border border-border bg-gradient-to-br from-primary/5 to-primary/10 p-4 flex flex-col items-center justify-center text-center">
-      <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-3">
-        <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-          <path d="M12 15l-2 5-1-3-3-1 5-2zM12 15l2 5 1-3 3-1-5-2z" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M8 7a4 4 0 118 0 4 4 0 01-8 0z" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <h2 class="text-sm font-semibold text-foreground mb-1">マイステータスを確認</h2>
-      <p class="text-xs text-muted-foreground mb-4">投票回数に応じた実績バッジを獲得しよう</p>
-      <%= link_to "ステータスを見る", voter_status_path, class: "inline-flex items-center justify-center bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 active:scale-95 transition-all duration-150 min-h-[44px]" %>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================
      Prefecture Grid
      ============================================ -->
-<section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4">
+<section id="prefectures" class="pb-12 md:pb-16 max-w-6xl mx-auto px-4">
   <h2 class="text-lg font-semibold tracking-tight text-foreground mb-4">都道府県から探す</h2>
 
   <%
@@ -362,12 +523,15 @@
     prefectures_by_name = @prefectures.index_by(&:name)
   %>
 
-  <% regions.each do |region_name, pref_names| %>
+  <%
+    region_colors = %w[bg-slot-blue bg-slot-yellow bg-slot-green bg-slot-red bg-slot-blue bg-slot-yellow bg-slot-green]
+  %>
+  <% regions.each_with_index do |(region_name, pref_names), region_idx| %>
     <div class="mb-2" data-controller="accordion">
       <button type="button" data-action="click->accordion#toggle"
               class="w-full flex items-center justify-between text-sm font-semibold text-muted-foreground py-3 hover:text-foreground active:bg-secondary/50 transition-all duration-150 min-h-[44px] rounded-md px-2">
         <div class="flex items-center gap-2">
-          <div class="h-4 w-1 rounded-full bg-primary"></div>
+          <div class="h-4 w-1 rounded-full <%= region_colors[region_idx] %>"></div>
           <span><%= region_name %></span>
         </div>
         <svg data-accordion-target="icon" class="w-4 h-4 text-muted-foreground transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -375,20 +539,20 @@
         </svg>
       </button>
       <div data-accordion-target="content" class="hidden mt-1.5 mb-2">
-        <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-1.5">
+        <div class="flex flex-wrap gap-1.5">
           <% pref_names.each do |pref_name| %>
             <% pref = prefectures_by_name[pref_name] %>
             <% if pref %>
               <%= link_to prefecture_path(pref.slug),
-                  class: "bg-card border border-border rounded-md px-2 py-2.5 text-xs text-center hover:bg-primary hover:text-primary-foreground hover:border-primary active:scale-95 transition-all duration-150 min-h-[44px] flex flex-col items-center justify-center" do %>
-                <span class="block truncate text-foreground"><%= pref_name %></span>
+                  class: "bg-card border border-border rounded-md px-3 py-2 text-xs text-center hover:bg-primary hover:text-primary-foreground hover:border-primary active:scale-95 transition-all duration-150 min-h-[40px] inline-flex items-center gap-1" do %>
+                <span class="text-foreground whitespace-nowrap"><%= pref_name.sub(/[県]$/, '') %></span>
                 <% if pref.respond_to?(:shops_count) && pref.shops_count > 0 %>
-                  <span class="block text-[10px] text-muted-foreground"><%= pref.shops_count %>店</span>
+                  <span class="text-[10px] text-muted-foreground"><%= pref.shops_count %></span>
                 <% end %>
               <% end %>
             <% else %>
-              <span class="bg-muted border border-border rounded-md px-2 py-1.5 text-xs text-center text-muted-foreground truncate">
-                <%= pref_name %>
+              <span class="bg-muted border border-border rounded-md px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                <%= pref_name.sub(/[県]$/, '') %>
               </span>
             <% end %>
           <% end %>

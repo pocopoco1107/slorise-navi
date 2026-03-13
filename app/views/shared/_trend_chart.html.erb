@@ -21,7 +21,7 @@
 
     <%# === Bar Chart: Daily Vote Count === %>
     <div class="mb-4">
-      <p class="text-[10px] text-muted-foreground mb-1.5">日別投票数</p>
+      <p class="text-[10px] text-muted-foreground mb-1.5">日別記録数</p>
       <% max_votes = days_data.map { |d| d[:votes] }.max %>
       <% max_votes = 1 if max_votes.nil? || max_votes == 0 %>
       <div class="flex items-end gap-1 <%= compact ? 'h-16' : 'h-24' %>">
@@ -31,7 +31,7 @@
             <span class="text-[9px] font-semibold text-foreground mb-0.5 tabular-nums"><%= day[:votes] %></span>
             <div class="w-full rounded-t bg-primary transition-all duration-300"
                  style="height: <%= pct > 0 ? [pct, 4].max : 0 %>%"></div>
-            <span class="text-[8px] text-muted-foreground mt-1 leading-none"><%= day[:date].strftime("%-m/%-d") %></span>
+            <span class="text-[8px] <%= holiday?(day[:date]) ? 'text-destructive' : 'text-muted-foreground' %> mt-1 leading-none"><%= format_date_with_weekday(day[:date], format: :short) %></span>
           </div>
         <% end %>
       </div>
@@ -118,7 +118,7 @@
     <div class="flex mt-1">
       <% days_data.each do |day| %>
         <div class="flex-1 text-center">
-          <span class="text-[8px] text-muted-foreground"><%= day[:date].strftime("%-m/%-d") %></span>
+          <span class="text-[8px] <%= holiday?(day[:date]) ? 'text-destructive' : 'text-muted-foreground' %>"><%= format_date_with_weekday(day[:date], format: :short) %></span>
         </div>
       <% end %>
     </div>

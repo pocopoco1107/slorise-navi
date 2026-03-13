@@ -1,4 +1,4 @@
-<% content_for(:title) { "#{@shop.name} - スロリセnavi" } %>
+<% content_for(:title) { "#{@shop.name} - ヨミスロ" } %>
 
 <%# JSON-LD structured data for LocalBusiness %>
 <% content_for(:head) do %>
@@ -7,7 +7,7 @@
       "@context": "https://schema.org",
       "@type": "AmusementPark",
       "name": @shop.name,
-      "description": "#{@shop.name}のパチスロ設定・リセット投票情報",
+      "description": "#{@shop.name}のパチスロ設定・リセット記録情報",
       "address": @shop.address.present? ? {
         "@type": "PostalAddress",
         "addressRegion": @shop.prefecture.name,
@@ -15,14 +15,7 @@
       } : nil,
       "telephone": @shop.phone_number.presence,
       "openingHours": @shop.business_hours.presence,
-      "url": request.original_url.split("?").first,
-      "aggregateRating": @average_rating ? {
-        "@type": "AggregateRating",
-        "ratingValue": @average_rating,
-        "bestRating": 5,
-        "worstRating": 1,
-        "ratingCount": @reviews.size
-      } : nil
+      "url": request.original_url.split("?").first
     }.compact.to_json) %>
   </script>
 <% end %>
@@ -171,33 +164,64 @@
     <% end %>
   </div>
 
-  <%# === Date Navigation === %>
-  <div class="bg-card border border-border rounded-lg p-3 mb-4">
-    <div class="flex items-center justify-center gap-3">
-      <%= link_to date_shop_path(@shop.slug, date: (@date - 1.day).strftime("%Y-%m-%d")),
-          class: "inline-flex items-center gap-1 border border-border bg-background rounded-md px-4 py-2 text-sm text-foreground hover:bg-secondary active:scale-95 transition-all duration-150 min-h-[44px]" do %>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-        前日
-      <% end %>
-      <span class="font-bold text-sm text-foreground tabular-nums">
-        <%= @date.strftime("%Y年%-m月%-d日") %>
-        <% if @date == Date.current %>
-          <span class="text-primary">(今日)</span>
-        <% end %>
-      </span>
-      <% if @date < Date.current %>
-        <%= link_to date_shop_path(@shop.slug, date: (@date + 1.day).strftime("%Y-%m-%d")),
-            class: "inline-flex items-center gap-1 border border-border bg-background rounded-md px-4 py-2 text-sm text-foreground hover:bg-secondary active:scale-95 transition-all duration-150 min-h-[44px]" do %>
-          翌日
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-        <% end %>
-      <% end %>
-      <% unless @date == Date.current %>
-        <%= link_to "今日", shop_path(@shop.slug),
-            class: "bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium hover:bg-primary/90 active:scale-95 transition-all duration-150 min-h-[44px] inline-flex items-center" %>
+  <%# === Play Record Stats === %>
+  <% shop_summary = PlayRecordSummary.find_by(scope_type: "shop", scope_id: @shop.id, period_type: :all_time, period_key: "all") %>
+  <% if shop_summary && shop_summary.total_records >= 3 %>
+    <div class="bg-card border border-border rounded-lg p-4 mb-6">
+      <h2 class="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+        <span class="w-1 h-4 bg-slot-yellow rounded-full"></span>
+        収支統計
+      </h2>
+      <div class="grid grid-cols-3 gap-3">
+        <div class="text-center">
+          <p class="text-lg font-bold tabular-nums <%= shop_summary.avg_result >= 0 ? 'text-primary' : 'text-destructive' %>">
+            <%= shop_summary.avg_result >= 0 ? '+' : '' %><%= number_with_delimiter(shop_summary.avg_result) %>円
+          </p>
+          <p class="text-xs text-muted-foreground">平均収支</p>
+        </div>
+        <div class="text-center">
+          <p class="text-lg font-bold tabular-nums text-foreground"><%= shop_summary.win_rate %>%</p>
+          <p class="text-xs text-muted-foreground">勝率</p>
+        </div>
+        <div class="text-center">
+          <p class="text-lg font-bold tabular-nums text-foreground"><%= shop_summary.total_records %></p>
+          <p class="text-xs text-muted-foreground">記録数</p>
+        </div>
+      </div>
+      <% if shop_summary.weekday_stats.present? %>
+        <div class="mt-3 flex items-center gap-1 justify-center">
+          <% %w[日 月 火 水 木 金 土].each_with_index do |name, i| %>
+            <% wday = shop_summary.weekday_stats[i.to_s] %>
+            <div class="flex flex-col items-center gap-0.5">
+              <span class="text-[10px] text-muted-foreground"><%= name %></span>
+              <% if wday %>
+                <span class="text-[10px] font-medium tabular-nums <%= wday['avg'].to_i >= 0 ? 'text-primary' : 'text-destructive' %>">
+                  <%= wday['avg'].to_i >= 0 ? '+' : '' %><%= (wday['avg'].to_i / 1000.0).round(0) %>k
+                </span>
+              <% else %>
+                <span class="text-[10px] text-muted-foreground">-</span>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
       <% end %>
     </div>
+  <% end %>
+
+  <%# === Monthly Calendar === %>
+  <div class="bg-card border border-border rounded-lg p-3 mb-4">
+    <turbo-frame id="shop_calendar">
+      <%= render "shops/calendar", shop: @shop, calendar_month: @calendar_month,
+                 calendar_data: @calendar_data, current_date: @date %>
+    </turbo-frame>
   </div>
+
+  <%# === Daily Summary === %>
+  <%= render "shops/daily_summary",
+      vote_summaries: @vote_summaries,
+      machine_names: @machine_names,
+      machine_slugs: @machine_slugs,
+      date: @date %>
 
   <%# === Vote Errors === %>
   <div id="vote_errors"></div>
@@ -211,8 +235,8 @@
       <input type="text"
              data-machine-search-target="input"
              data-action="input->machine-search#search"
-             placeholder="機種名を検索して投票..."
-             aria-label="機種名を検索して投票"
+             placeholder="機種名を検索して記録..."
+             aria-label="機種名を検索して記録"
              class="w-full border border-input bg-background text-foreground rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent shadow-xs placeholder:text-muted-foreground"
              autocomplete="off">
     </div>
@@ -231,12 +255,10 @@
     </div>
   </div>
 
-  <%# === Voted Machines === %>
+  <%# === Voted Machines (Grid) === %>
   <div class="mb-8" data-machine-filter-target="list">
     <% if @machine_models.any? %>
-      <h2 class="text-sm font-semibold text-muted-foreground mb-2">設置機種 (<%= @machine_models.size %>件)</h2>
       <%
-        # タイプ別にグループ化
         grouped = @machine_models.chunk { |m| m.display_type }
       %>
       <% grouped.each do |type, machines| %>
@@ -247,12 +269,13 @@
           <span class="text-[10px] text-muted-foreground"><%= machines.size %>機種</span>
           <div class="flex-1 h-px bg-border"></div>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           <% machines.each do |machine_model| %>
             <%= render "shops/machine_vote_row",
                 machine_model: machine_model,
                 vote_summary: @vote_summaries[machine_model.id],
                 user_vote: @user_votes[machine_model.id],
+                user_play_record: @user_play_records[machine_model.id],
                 shop: @shop,
                 date: @date,
                 unit_count: @unit_counts[machine_model.id] %>
@@ -261,27 +284,23 @@
       <% end %>
     <% else %>
       <div class="bg-card border border-border rounded-lg p-8 text-center">
-        <div class="w-20 h-20 mx-auto mb-3">
-          <%= image_tag "empty_search.svg", alt: "投票なし", class: "w-full h-full opacity-50" %>
-        </div>
-        <p class="text-muted-foreground text-sm">まだ投票がありません。上の検索から機種を探して投票しましょう。</p>
+        <p class="text-muted-foreground text-sm">まだ記録がありません。上の検索から機種を探して記録しましょう。</p>
       </div>
     <% end %>
   </div>
 
-  <%# === Reviews === %>
-  <%= render "shops/reviews", shop: @shop, reviews: @reviews, average_rating: @average_rating, existing_review: @existing_review %>
+  <%# === Events === %>
+  <%= render "shops/events", shop: @shop, upcoming_events: @upcoming_events, past_events: @past_events %>
 
   <%# === Comments === %>
   <%= render "shops/comments", shop: @shop, comments: @comments, date: @date %>
 
-  <%# === Trend Chart === %>
-  <% if @trend_data&.any? { |d| d[:votes] > 0 } %>
-    <div class="mt-8">
-      <%= render "shared/trend_chart",
-          title: "過去7日間の投票トレンド",
-          days_data: @trend_data %>
-    </div>
+  <%# === Trend Section (charts + weekly summary) === %>
+  <% if @trend_data&.any? { |d| d[:votes] > 0 } || @weekly_summary&.dig(:total_votes).to_i > 0 %>
+    <%= render "shops/trend_section",
+        shop: @shop,
+        trend_data: @trend_data || [],
+        weekly_summary: @weekly_summary || {} %>
   <% end %>
 
   <%# === Same Rate Shops === %>

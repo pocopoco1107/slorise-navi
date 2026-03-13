@@ -1,5 +1,5 @@
-// スロリセnavi Service Worker — Network First + Offline Fallback
-const CACHE_NAME = "slorise-navi-v1";
+// ヨミスロ Service Worker — Network First + Offline Fallback
+const CACHE_NAME = "yomislo-v1";
 const OFFLINE_URL = "/offline.html";
 
 // Install: pre-cache offline page

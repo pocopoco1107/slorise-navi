@@ -1,5 +1,26 @@
 @import "tailwindcss";
 
+/* あんずもじ等幅 — 見出し用サブセット (商用無料) */
+@font-face {
+  font-family: "Anzumoji";
+  src: url("/anzumoji.woff2") format("woff2");
+  font-display: swap;
+}
+
+/* しごとメモ書き — ヒーロー見出し用 (手書き風) */
+@font-face {
+  font-family: "ShigotoMemogaki";
+  src: url("/shigotomemogaki.ttf") format("truetype");
+  font-display: swap;
+}
+
+/* うずらフォント — ヒーロー見出し用 (丸みのある手書き風) */
+@font-face {
+  font-family: "Uzura";
+  src: url("/uzura.ttf") format("truetype");
+  font-display: swap;
+}
+
 /* ダークモード: .dark クラスベース (Stimulus theme コントローラで制御) */
 @custom-variant dark (&:is(.dark *));
 
@@ -13,41 +34,47 @@
   --card-foreground: #111827;
   --popover: #ffffff;
   --popover-foreground: #111827;
-  --primary: #10b981;
+  --primary: #22c55e;
   --primary-foreground: #ffffff;
   --secondary: #f3f4f6;
   --secondary-foreground: #111827;
   --muted: #f3f4f6;
   --muted-foreground: #6b7280;
-  --accent: #10b981;
+  --accent: #22c55e;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --border: #e5e7eb;
   --input: #e5e7eb;
-  --ring: #10b981;
+  --ring: #22c55e;
   --chart-1: #3b82f6;
   --chart-2: #06b6d4;
-  --chart-3: #10b981;
-  --chart-4: #f59e0b;
+  --chart-3: #22c55e;
+  --chart-4: #eab308;
   --chart-5: #f97316;
   --chart-6: #ef4444;
-  --radius: 0.5rem;
+  --radius: 0.625rem;
+
+  /* パチスロ演出カラー (ロゴ準拠) */
+  --slot-blue: #3b82f6;
+  --slot-yellow: #eab308;
+  --slot-green: #22c55e;
+  --slot-red: #ef4444;
 
   /* Custom tokens */
   --text-primary: #111827;
   --text-secondary: #6b7280;
   --text-tertiary: #9ca3af;
-  --accent-muted: rgba(16, 185, 129, 0.12);
-  --accent-text: #059669;
-  --vote-yes: #10b981;
+  --accent-muted: rgba(34, 197, 94, 0.12);
+  --accent-text: #16a34a;
+  --vote-yes: #22c55e;
   --vote-no: #ef4444;
   --confirmed: #7c3aed;
   --confirmed-light: #a78bfa;
   --setting-1: #3b82f6;
   --setting-2: #06b6d4;
-  --setting-3: #10b981;
-  --setting-4: #f59e0b;
+  --setting-3: #22c55e;
+  --setting-4: #eab308;
   --setting-5: #f97316;
   --setting-6: #ef4444;
 }
@@ -56,48 +83,54 @@
    Dark mode (デフォルト)
    ============================================ */
 .dark {
-  --background: #0a0a0b;
-  --foreground: #fafafa;
-  --card: #141416;
-  --card-foreground: #fafafa;
-  --popover: #222225;
-  --popover-foreground: #fafafa;
-  --primary: #10b981;
-  --primary-foreground: #0a0a0b;
-  --secondary: #1c1c1f;
-  --secondary-foreground: #fafafa;
-  --muted: #1c1c1f;
-  --muted-foreground: #71717a;
-  --accent: #10b981;
-  --accent-foreground: #0a0a0b;
-  --destructive: #ef4444;
-  --destructive-foreground: #fafafa;
-  --border: #27272a;
-  --input: #27272a;
-  --ring: #10b981;
-  --chart-1: #3b82f6;
-  --chart-2: #06b6d4;
-  --chart-3: #10b981;
-  --chart-4: #f59e0b;
-  --chart-5: #f97316;
-  --chart-6: #ef4444;
+  --background: #0f1117;
+  --foreground: #f4f4f5;
+  --card: #181a22;
+  --card-foreground: #f4f4f5;
+  --popover: #1e2028;
+  --popover-foreground: #f4f4f5;
+  --primary: #4ade80;
+  --primary-foreground: #0f1117;
+  --secondary: #232530;
+  --secondary-foreground: #f4f4f5;
+  --muted: #232530;
+  --muted-foreground: #8b8d98;
+  --accent: #4ade80;
+  --accent-foreground: #0f1117;
+  --destructive: #f87171;
+  --destructive-foreground: #0f1117;
+  --border: #2e3040;
+  --input: #2e3040;
+  --ring: #4ade80;
+  --chart-1: #60a5fa;
+  --chart-2: #22d3ee;
+  --chart-3: #4ade80;
+  --chart-4: #facc15;
+  --chart-5: #fb923c;
+  --chart-6: #f87171;
+
+  /* パチスロ演出カラー (ロゴ準拠・ダーク用明るめ) */
+  --slot-blue: #60a5fa;
+  --slot-yellow: #facc15;
+  --slot-green: #4ade80;
+  --slot-red: #f87171;
 
   /* Custom tokens */
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-tertiary: #71717a;
-  --accent-muted: rgba(16, 185, 129, 0.12);
-  --accent-text: #6ee7b7;
-  --vote-yes: #10b981;
-  --vote-no: #ef4444;
-  --confirmed: #7c3aed;
-  --confirmed-light: #a78bfa;
-  --setting-1: #3b82f6;
-  --setting-2: #06b6d4;
-  --setting-3: #10b981;
-  --setting-4: #f59e0b;
-  --setting-5: #f97316;
-  --setting-6: #ef4444;
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a3ae;
+  --text-tertiary: #6b6e7b;
+  --accent-muted: rgba(74, 222, 128, 0.12);
+  --accent-text: #86efac;
+  --vote-yes: #4ade80;
+  --vote-no: #f87171;
+  --confirmed: #a78bfa;
+  --confirmed-light: #c4b5fd;
+  --setting-1: #60a5fa;
+  --setting-2: #22d3ee;
+  --setting-3: #4ade80;
+  --setting-4: #facc15;
+  --setting-5: #fb923c;
+  --setting-6: #f87171;
 
   color-scheme: dark;
 }
@@ -137,6 +170,12 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
   --color-chart-6: var(--chart-6);
+
+  /* パチスロ演出カラー */
+  --color-slot-blue: var(--slot-blue);
+  --color-slot-yellow: var(--slot-yellow);
+  --color-slot-green: var(--slot-green);
+  --color-slot-red: var(--slot-red);
 
   /* Border radius */
   --radius-sm: calc(var(--radius) - 4px);
@@ -242,6 +281,11 @@
   /* turbo-frame をブロック要素化 (gridの子要素として正しく動作させる) */
   turbo-frame {
     display: block;
+  }
+
+  /* details summary のデフォルトマーカーを非表示 (Safari対応) */
+  summary::-webkit-details-marker {
+    display: none;
   }
 
   /* タップハイライトを抑制 (iOS) */

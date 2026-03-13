@@ -9,11 +9,11 @@ RSpec.describe "Home page", type: :system do
     it "displays the hero heading and stats" do
       visit root_path
 
-      expect(page).to have_content("今日の稼働状況")
-      expect(page).to have_content("みんなで集めよう")
-      expect(page).to have_content("累計投票数")
-      expect(page).to have_content("登録店舗")
-      expect(page).to have_content("今日の投票")
+      expect(page).to have_content("みんなの記録")
+      expect(page).to have_content("傾向が見える")
+      expect(page).to have_content("累計記録")
+      expect(page).to have_content("店舗")
+      expect(page).to have_content("今日の記録")
     end
   end
 
@@ -53,7 +53,7 @@ RSpec.describe "Home page", type: :system do
     it "displays the weekly ranking card" do
       visit root_path
 
-      expect(page).to have_content("週間投票ランキング")
+      expect(page).to have_content("週間記録ランキング")
     end
   end
 
@@ -61,7 +61,7 @@ RSpec.describe "Home page", type: :system do
     it "displays the status check card" do
       visit root_path
 
-      expect(page).to have_content("マイステータスを確認")
+      expect(page).to have_content("称号を獲得しよう")
       expect(page).to have_link("ステータスを見る", href: voter_status_path)
     end
   end

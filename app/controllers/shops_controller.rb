@@ -57,6 +57,14 @@ class ShopsController < ApplicationController
   end
 
   def autocomplete
+    # Favorites mode: return shops by slugs (for focus dropdown)
+    if params[:favorites].present?
+      slugs = params[:favorites].split(",").first(20)
+      shops = Shop.where(slug: slugs).includes(:prefecture)
+      render json: shops.map { |s| { id: s.id, name: s.name, slug: s.slug, prefecture: s.prefecture.name } }
+      return
+    end
+
     query = params[:q].to_s.strip
     if query.length < 2
       render json: []
@@ -68,7 +76,7 @@ class ShopsController < ApplicationController
                 .order(:name)
                 .limit(10)
 
-    render json: shops.map { |s| { id: s.id, name: s.name, prefecture: s.prefecture.name } }
+    render json: shops.map { |s| { id: s.id, name: s.name, slug: s.slug, prefecture: s.prefecture.name } }
   end
 
   def nearby

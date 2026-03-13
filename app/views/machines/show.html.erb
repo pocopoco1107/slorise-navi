@@ -368,7 +368,7 @@
         <div class="bg-card border border-border rounded-lg p-3">
           <div class="flex items-center justify-between">
             <%= link_to shop_path(vs.shop.slug), class: "font-medium text-sm text-primary hover:underline" do %>
-              <%= vs.shop.name %>
+              <%= favorite_mark(vs.shop) %> <%= vs.shop.name %>
             <% end %>
             <span class="text-xs text-muted-foreground tabular-nums"><%= vs.total_votes %>件</span>
           </div>
@@ -465,7 +465,7 @@
                     data: { machine_shop_filter_target: "card", rates: (shop.slot_rates || []).join(",") },
                     class: "bg-card border border-border rounded-lg px-3 py-2.5 hover:bg-secondary hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-150 block min-h-[44px]" do %>
                 <div class="flex items-center justify-between gap-2">
-                  <span class="text-sm font-medium text-primary truncate"><%= shop.name %></span>
+                  <span class="text-sm font-medium text-primary truncate"><%= favorite_mark(shop) %> <%= shop.name %></span>
                   <span class="text-[10px] text-muted-foreground shrink-0"><%= pref_name %></span>
                 </div>
                 <div class="flex flex-wrap items-center gap-1 mt-1.5">

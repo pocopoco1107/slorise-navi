@@ -1,4 +1,13 @@
 module ApplicationHelper
+  # Render favorite ★ mark (client-side via Stimulus)
+  # Inserts a small span that auto-shows ★ if the shop is in localStorage favorites
+  def favorite_mark(shop)
+    tag.span(class: "text-yellow-500 text-xs leading-none", data: {
+      controller: "favorite-mark",
+      favorite_mark_slug_value: shop.slug
+    })
+  end
+
   # Render star characters for a given rating (1-5, supports decimals)
   def render_stars(rating)
     return "" unless rating

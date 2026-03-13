@@ -104,12 +104,5 @@ class HomeController < ApplicationController
       end
     end
 
-    if params[:q].present?
-      @search_results = Shop.search_by_name(params[:q]).includes(:prefecture).limit(20)
-    end
-
-    if params[:mq].present?
-      @machine_results = MachineModel.active.where("name ILIKE ?", "%#{MachineModel.sanitize_sql_like(params[:mq])}%").order(:name).limit(20)
-    end
   end
 end

@@ -1,13 +1,25 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Autocomplete shop search for play record form
+// Shows favorite shops on focus, marks them with ★
 export default class extends Controller {
   static targets = ["input", "hidden", "results", "display"]
-  static values = { url: String }
+  static values = { url: String, favoritesUrl: String }
 
   connect() {
     this._debounceTimer = null
     this._selectedId = null
+  }
+
+  focus() {
+    // Already selected or user is typing — don't show favorites
+    if (this._selectedId || this.inputTarget.value.trim().length >= 2) return
+
+    const slugs = this._getFavorites()
+    if (slugs.length === 0) return
+
+    // Fetch favorite shops and show them
+    this._fetchFavorites(slugs)
   }
 
   search() {
@@ -20,6 +32,14 @@ export default class extends Controller {
     }
 
     if (query.length < 2) {
+      // Show favorites if input is empty/short and we have some
+      if (query.length === 0) {
+        const slugs = this._getFavorites()
+        if (slugs.length > 0) {
+          this._fetchFavorites(slugs)
+          return
+        }
+      }
       this._hideResults()
       return
     }
@@ -52,6 +72,30 @@ export default class extends Controller {
 
   // Private
 
+  _getFavorites() {
+    try {
+      return JSON.parse(localStorage.getItem("favorite_shops") || "[]")
+    } catch {
+      return []
+    }
+  }
+
+  async _fetchFavorites(slugs) {
+    const url = `${this.urlValue}?favorites=${encodeURIComponent(slugs.join(","))}`
+    try {
+      const response = await fetch(url, {
+        headers: { "Accept": "application/json" }
+      })
+      if (!response.ok) return
+      const shops = await response.json()
+      if (shops.length > 0) {
+        this._renderResults(shops, new Set(slugs))
+      }
+    } catch {
+      // Silently fail
+    }
+  }
+
   async _fetch(query) {
     const url = `${this.urlValue}?q=${encodeURIComponent(query)}`
     try {
@@ -60,13 +104,14 @@ export default class extends Controller {
       })
       if (!response.ok) return
       const shops = await response.json()
-      this._renderResults(shops)
-    } catch (e) {
+      const favSlugs = new Set(this._getFavorites())
+      this._renderResults(shops, favSlugs)
+    } catch {
       // Silently fail
     }
   }
 
-  _renderResults(shops) {
+  _renderResults(shops, favSlugs = new Set()) {
     const container = this.resultsTarget
 
     if (shops.length === 0) {
@@ -78,17 +123,20 @@ export default class extends Controller {
       return
     }
 
-    container.innerHTML = shops.map(shop => `
+    container.innerHTML = shops.map(shop => {
+      const isFav = shop.slug ? favSlugs.has(shop.slug) : false
+      const star = isFav ? `<span class="text-yellow-500 text-xs shrink-0 mr-1">★</span>` : ""
+      return `
       <button type="button"
               class="w-full text-left px-3 py-2.5 hover:bg-secondary transition-colors flex items-center justify-between gap-2 min-h-[44px]"
               data-action="click->shop-autocomplete#select"
               data-shop-id="${shop.id}"
               data-shop-name="${this._escapeHtml(shop.name)}"
               data-shop-prefecture="${this._escapeHtml(shop.prefecture)}">
-        <span class="text-sm text-foreground truncate">${this._escapeHtml(shop.name)}</span>
+        <span class="text-sm text-foreground truncate flex items-center">${star}${this._escapeHtml(shop.name)}</span>
         <span class="text-[11px] text-muted-foreground shrink-0">${this._escapeHtml(shop.prefecture)}</span>
-      </button>
-    `).join("")
+      </button>`
+    }).join("")
 
     container.classList.remove("hidden")
   }

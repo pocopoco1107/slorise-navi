@@ -41,80 +41,38 @@
 
     <!-- Search in Hero -->
     <div class="w-full max-w-xl flex flex-col gap-3">
-      <%# 店舗検索 %>
-      <%= form_tag root_path, method: :get, data: { turbo_frame: "search_results" }, class: "relative w-full" do %>
-        <svg class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <%# 店舗検索（リアルタイムオートコンプリート） %>
+      <div data-controller="hero-search" data-hero-search-url-value="<%= autocomplete_shops_path %>" data-hero-search-type-value="shop" class="relative w-full">
+        <svg class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground pointer-events-none z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
           <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <input type="search" name="q" value="<%= params[:q] %>"
+        <input type="search"
                placeholder="店舗名で検索"
                autocomplete="off"
                aria-label="店舗名で検索"
+               data-hero-search-target="input"
+               data-action="input->hero-search#search focus->hero-search#focus"
                class="h-12 w-full rounded-lg border border-border bg-card pl-12 pr-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none md:h-14 md:text-lg transition-colors">
-      <% end %>
+        <div data-hero-search-target="results"
+             class="hidden absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-30 max-h-[320px] overflow-y-auto divide-y divide-border"></div>
+      </div>
 
-      <%# 機種検索 %>
-      <%= form_tag root_path, method: :get, data: { turbo_frame: "machine_search_results" }, class: "relative w-full" do %>
-        <svg class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <%# 機種検索（リアルタイムオートコンプリート） %>
+      <div data-controller="hero-search" data-hero-search-url-value="<%= autocomplete_machines_path %>" data-hero-search-type-value="machine" class="relative w-full">
+        <svg class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground pointer-events-none z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
           <rect x="2" y="7" width="20" height="14" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M16 3l-4 4-4-4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <input type="search" name="mq" value="<%= params[:mq] %>"
+        <input type="search"
                placeholder="機種名で検索"
                autocomplete="off"
                aria-label="機種名で検索"
+               data-hero-search-target="input"
+               data-action="input->hero-search#search"
                class="h-12 w-full rounded-lg border border-border bg-card pl-12 pr-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none md:h-14 md:text-lg transition-colors">
-      <% end %>
-
-      <%# 店舗検索結果 %>
-      <turbo-frame id="search_results">
-        <% if params[:q].present? && @search_results %>
-          <div class="bg-card rounded-lg border border-border p-4">
-            <h2 class="text-sm font-semibold text-muted-foreground mb-3">
-              「<%= params[:q] %>」の店舗検索結果 (<%= @search_results.size %>件)
-            </h2>
-            <% if @search_results.any? %>
-              <ul class="divide-y divide-border">
-                <% @search_results.each do |shop| %>
-                  <li class="py-2">
-                    <%= link_to shop_path(shop.slug), class: "flex justify-between items-center hover:bg-secondary -mx-2 px-2 py-2.5 rounded transition-colors duration-150 min-h-[44px]", data: { turbo_frame: "_top" } do %>
-                      <span class="font-medium text-sm text-foreground"><%= shop.name %></span>
-                      <span class="text-xs text-muted-foreground"><%= shop.prefecture.name %></span>
-                    <% end %>
-                  </li>
-                <% end %>
-              </ul>
-            <% else %>
-              <p class="text-sm text-muted-foreground text-center py-4">該当する店舗が見つかりませんでした。</p>
-            <% end %>
-          </div>
-        <% end %>
-      </turbo-frame>
-
-      <%# 機種検索結果 %>
-      <turbo-frame id="machine_search_results">
-        <% if params[:mq].present? && @machine_results %>
-          <div class="bg-card rounded-lg border border-border p-4">
-            <h2 class="text-sm font-semibold text-muted-foreground mb-3">
-              「<%= params[:mq] %>」の機種検索結果 (<%= @machine_results.size %>件)
-            </h2>
-            <% if @machine_results.any? %>
-              <ul class="divide-y divide-border">
-                <% @machine_results.each do |machine| %>
-                  <li class="py-2">
-                    <%= link_to machine_path(machine.slug), class: "flex justify-between items-center hover:bg-secondary -mx-2 px-2 py-2.5 rounded transition-colors duration-150 min-h-[44px]", data: { turbo_frame: "_top" } do %>
-                      <span class="font-medium text-sm text-foreground"><%= machine.name %></span>
-                      <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md <%= machine.display_type_badge_class %>"><%= machine.display_type_label %></span>
-                    <% end %>
-                  </li>
-                <% end %>
-              </ul>
-            <% else %>
-              <p class="text-sm text-muted-foreground text-center py-4">該当する機種が見つかりませんでした。</p>
-            <% end %>
-          </div>
-        <% end %>
-      </turbo-frame>
+        <div data-hero-search-target="results"
+             class="hidden absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-30 max-h-[320px] overflow-y-auto divide-y divide-border"></div>
+      </div>
 
       <!-- Nearby Shops -->
       <div class="mt-4" data-controller="nearby">
@@ -277,7 +235,7 @@
             <li class="flex items-center gap-2">
               <span class="text-xs font-bold tabular-nums w-4 text-muted-foreground"><%= i + 1 %></span>
               <%= link_to shop_path(item[:shop].slug), class: "text-sm font-medium text-primary hover:underline truncate flex-1", data: { turbo_frame: "_top" } do %>
-                <%= item[:shop].name %>
+                <%= favorite_mark(item[:shop]) %> <%= item[:shop].name %>
               <% end %>
               <span class="text-xs tabular-nums text-muted-foreground shrink-0"><%= item[:votes] %>件</span>
             </li>
@@ -317,71 +275,6 @@
 </section>
 
 <!-- ============================================
-     Trending Shops (Carousel)
-     ============================================ -->
-<% if @hot_shops.any? %>
-  <section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4" data-controller="carousel">
-    <div class="mb-4 flex items-center gap-2">
-      <svg class="h-5 w-5 text-slot-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-        <polyline points="17 6 23 6 23 12"/>
-      </svg>
-      <h2 class="text-lg font-semibold tracking-tight text-foreground">トレンド店舗</h2>
-    </div>
-
-    <div class="relative">
-      <!-- Prev Button -->
-      <button type="button"
-              data-carousel-target="prevBtn"
-              data-action="click->carousel#prev"
-              class="invisible absolute -left-3 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-card border border-border shadow-lg hover:bg-secondary transition-colors md:flex hidden sm:flex">
-        <svg class="h-4 w-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-          <path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-
-      <!-- Track -->
-      <div data-carousel-target="track"
-           class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide scroll-smooth snap-x snap-mandatory">
-        <% @hot_shops.each do |item| %>
-          <%= link_to shop_path(item[:shop].slug),
-              class: "group flex min-w-[240px] max-w-[280px] flex-col gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/50 hover:bg-secondary snap-start shrink-0",
-              data: { carousel_card: "", turbo_frame: "_top" } do %>
-            <div class="flex flex-col gap-1">
-              <h3 class="text-sm font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-                <%= item[:shop].name %>
-              </h3>
-              <p class="text-xs text-muted-foreground"><%= item[:shop].prefecture&.name %></p>
-            </div>
-            <div class="flex items-end justify-between">
-              <div class="flex flex-col gap-0.5">
-                <span class="text-xs text-muted-foreground">今日の記録</span>
-                <span class="text-lg font-semibold tabular-nums text-foreground">
-                  <%= item[:votes] %><span class="text-xs font-normal text-muted-foreground ml-0.5">件</span>
-                </span>
-              </div>
-            </div>
-          <% end %>
-        <% end %>
-      </div>
-
-      <!-- Next Button -->
-      <button type="button"
-              data-carousel-target="nextBtn"
-              data-action="click->carousel#next"
-              class="invisible absolute -right-3 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-card border border-border shadow-lg hover:bg-secondary transition-colors md:flex hidden sm:flex">
-        <svg class="h-4 w-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-          <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-
-      <!-- Dots -->
-      <div data-carousel-target="dots" class="flex items-center justify-center gap-2 mt-3 text-muted-foreground"></div>
-    </div>
-  </section>
-<% end %>
-
-<!-- ============================================
      Favorite Shops
      ============================================ -->
 <section class="pb-10 md:pb-14 max-w-6xl mx-auto px-4" data-controller="favorites-list">
@@ -397,15 +290,16 @@
 </section>
 
 <!-- ============================================
-     AI Recommendations
+     Trending Shops
      ============================================ -->
 <% if @recommendations.present? %>
   <section class="pb-12 md:pb-16 max-w-6xl mx-auto px-4">
     <div class="mb-4 flex items-center gap-2">
-      <svg class="h-5 w-5 text-slot-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke-linecap="round" stroke-linejoin="round"/>
+      <svg class="h-5 w-5 text-slot-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+        <polyline points="17 6 23 6 23 12"/>
       </svg>
-      <h2 class="text-lg font-semibold tracking-tight text-foreground">今日のおすすめ店舗</h2>
+      <h2 class="text-lg font-semibold tracking-tight text-foreground">トレンド店舗</h2>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       <% @recommendations.each_with_index do |rec, i| %>
@@ -416,7 +310,7 @@
                 <%= case i when 0 then 'bg-primary/15 text-primary' when 1 then 'bg-primary/10 text-primary' else 'bg-muted text-muted-foreground' end %>">
                 <%= i + 1 %>
               </span>
-              <p class="font-medium text-sm text-foreground truncate group-hover:text-primary transition-colors"><%= rec.shop.name %></p>
+              <p class="font-medium text-sm text-foreground truncate group-hover:text-primary transition-colors"><%= favorite_mark(rec.shop) %> <%= rec.shop.name %></p>
             </div>
             <% if rec.shop.prefecture %>
               <span class="shrink-0 text-[10px] text-muted-foreground"><%= rec.shop.prefecture.name %></span>
@@ -572,7 +466,7 @@
       <% @recent_shops.each do |shop| %>
         <%= link_to shop_path(shop.slug), class: "group rounded-lg border border-border bg-card p-3 hover:border-primary/50 hover:bg-secondary transition-all duration-150 block", data: { turbo_frame: "_top" } do %>
           <div class="flex items-start justify-between gap-2">
-            <p class="font-medium text-sm text-foreground truncate flex-1 group-hover:text-primary transition-colors"><%= shop.name %></p>
+            <p class="font-medium text-sm text-foreground truncate flex-1 group-hover:text-primary transition-colors"><%= favorite_mark(shop) %> <%= shop.name %></p>
             <% if shop.exchange_rate != "unknown_rate" %>
               <span class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full
                 <%= case shop.exchange_rate

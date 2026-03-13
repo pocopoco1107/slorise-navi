@@ -318,7 +318,7 @@
                 <%= case i when 0 then 'bg-primary/15 text-primary' when 1 then 'bg-slot-blue/15 text-slot-blue' else 'bg-secondary text-muted-foreground' end %>">
                 <%= i + 1 %>
               </span>
-              <p class="font-semibold text-sm text-foreground truncate"><%= rec.shop.name %></p>
+              <p class="font-semibold text-sm text-foreground truncate"><%= favorite_mark(rec.shop) %> <%= rec.shop.name %></p>
             </div>
             <% if rec.reasons.any? %>
               <div class="flex flex-wrap gap-1 mt-2 ml-7">
@@ -545,7 +545,7 @@
                       filter_morning: shop.morning_entry.present? ? "yes" : "no"
                     } do %>
                   <div class="flex items-start justify-between gap-2">
-                    <p class="font-semibold text-sm text-foreground truncate flex-1"><%= shop.name %></p>
+                    <p class="font-semibold text-sm text-foreground truncate flex-1"><%= favorite_mark(shop) %> <%= shop.name %></p>
                     <% if shop.exchange_rate != "unknown_rate" %>
                       <span class="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-md
                         <%= case shop.exchange_rate

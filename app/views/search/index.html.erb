@@ -160,7 +160,7 @@
       <% @shops.each do |shop| %>
         <%= link_to shop_path(shop.slug), class: "bg-card border border-border rounded-lg p-3.5 hover:border-primary/50 transition-colors block" do %>
           <div class="flex items-start justify-between gap-2">
-            <p class="font-semibold text-sm text-foreground truncate flex-1"><%= shop.name %></p>
+            <p class="font-semibold text-sm text-foreground truncate flex-1"><%= favorite_mark(shop) %> <%= shop.name %></p>
             <% if shop.exchange_rate != "unknown_rate" %>
               <span class="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-md
                 <%= case shop.exchange_rate

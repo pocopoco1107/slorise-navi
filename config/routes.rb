@@ -25,6 +25,7 @@ Rails.application.routes.draw do
   resources :machines, only: [:show], param: :slug do
     collection do
       get :search
+      get :autocomplete
     end
   end
   resources :votes, only: [:create, :update]

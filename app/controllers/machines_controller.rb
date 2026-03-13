@@ -85,4 +85,26 @@ class MachinesController < ApplicationController
     end
     render partial: "machines/search_results", locals: { machines: @machines, shop_id: params[:shop_id], date: params[:date] }, layout: false
   end
+
+  def autocomplete
+    query = params[:q].to_s.strip
+    if query.length < 1
+      render json: []
+      return
+    end
+
+    machines = MachineModel.active
+                           .where("name ILIKE ?", "%#{MachineModel.sanitize_sql_like(query)}%")
+                           .order(:name)
+                           .limit(10)
+
+    render json: machines.map { |m|
+      {
+        id: m.id,
+        name: m.name,
+        slug: m.slug,
+        display_type: m.display_type_label
+      }
+    }
+  end
 end

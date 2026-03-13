@@ -172,7 +172,7 @@
                 <span class="text-xs tabular-nums text-muted-foreground shrink-0">
                   <%= played_on.strftime("%-m/%-d") %>(<%= %w[日 月 火 水 木 金 土][played_on.wday] %>)
                 </span>
-                <span class="text-sm font-medium text-foreground truncate"><%= records.first.shop.name %></span>
+                <span class="text-sm font-medium text-foreground truncate"><%= favorite_mark(records.first.shop) %> <%= records.first.shop.name %></span>
               </div>
               <span class="text-sm font-bold tabular-nums shrink-0 <%= day_total >= 0 ? 'text-primary' : 'text-destructive' %>">
                 <%= day_total >= 0 ? "+" : "" %><%= number_with_delimiter(day_total) %>
@@ -317,7 +317,7 @@
           <label class="text-xs font-medium text-muted-foreground block mb-1.5">店舗 <span class="text-destructive">*</span></label>
           <input type="text" placeholder="店舗名を入力して検索..." autocomplete="off"
                  data-shop-autocomplete-target="input"
-                 data-action="input->shop-autocomplete#search"
+                 data-action="input->shop-autocomplete#search focus->shop-autocomplete#focus"
                  class="w-full border border-input bg-background text-foreground rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring min-h-[48px] placeholder:text-muted-foreground">
           <input type="hidden" name="shop_id" required data-shop-autocomplete-target="hidden">
           <%# Autocomplete results dropdown %>

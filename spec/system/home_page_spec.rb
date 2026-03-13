@@ -21,7 +21,7 @@ RSpec.describe "Home page", type: :system do
     it "displays the search input" do
       visit root_path
 
-      expect(page).to have_field(type: "search", name: "q")
+      expect(page).to have_field(type: "search", placeholder: "店舗名で検索")
     end
   end
 

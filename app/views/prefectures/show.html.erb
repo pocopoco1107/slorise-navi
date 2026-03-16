@@ -377,6 +377,7 @@
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
     </svg>
     <input type="text"
+           id="prefecture_shop_filter"
            data-action="input->machine-filter#filter"
            data-machine-filter-target="input"
            placeholder="店舗名で絞り込み..."
@@ -413,6 +414,7 @@
             <% [["equal_rate", "等価"], ["rate_56", "5.6枚交換"], ["rate_50", "5.0枚交換"], ["non_equal", "非等価"]].each do |value, label| %>
               <label class="flex items-center gap-2.5 cursor-pointer group">
                 <input type="checkbox" value="<%= value %>"
+                       name="filter_exchange[]"
                        data-filter-category="exchange"
                        data-shop-filter-target="checkbox"
                        data-action="change->shop-filter#apply"
@@ -430,6 +432,7 @@
             <% %w[20スロ 5スロ 2スロ 1スロ].each do |rate| %>
               <label class="flex items-center gap-2.5 cursor-pointer group">
                 <input type="checkbox" value="<%= rate %>"
+                       name="filter_rates[]"
                        data-filter-category="rates"
                        data-shop-filter-target="checkbox"
                        data-action="change->shop-filter#apply"
@@ -447,6 +450,7 @@
             <% [["加熱式たばこ遊技OK", "加熱式たばこ遊技OK"], ["Wi-Fi", "Wi-Fi"], ["充電器", "充電器"], ["parking", "駐車場あり"]].each do |value, label| %>
               <label class="flex items-center gap-2.5 cursor-pointer group">
                 <input type="checkbox" value="<%= value %>"
+                       name="filter_facilities[]"
                        data-filter-category="facilities"
                        data-shop-filter-target="checkbox"
                        data-action="change->shop-filter#apply"
@@ -464,6 +468,7 @@
             <% [["9", "9時台"], ["10", "10時台"]].each do |value, label| %>
               <label class="flex items-center gap-2.5 cursor-pointer group">
                 <input type="checkbox" value="<%= value %>"
+                       name="filter_hours[]"
                        data-filter-category="hours"
                        data-shop-filter-target="checkbox"
                        data-action="change->shop-filter#apply"
@@ -480,6 +485,7 @@
           <div class="space-y-2">
             <label class="flex items-center gap-2.5 cursor-pointer group">
               <input type="checkbox" value="yes"
+                     name="filter_morning"
                      data-filter-category="morning"
                      data-shop-filter-target="checkbox"
                      data-action="change->shop-filter#apply"

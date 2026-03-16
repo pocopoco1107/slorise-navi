@@ -26,13 +26,24 @@ bin/dev  # サーバー起動 (Tailwind watch + Rails)
 - **コンテナ不要**: Docker/Kamal削除済み。Render.comにGit直接デプロイ
 - **1人1日1店舗1機種1件**: `voter_token + shop_id + machine_model_id + voted_on` でユニーク制約
 
+## データソース
+**DMMぱちタウン (https://p-town.dmm.com) に一本化**。P-WORLDは廃止済み。
+
+| データ | ソース | タスク | 頻度 |
+|--------|--------|--------|------|
+| 機種マスタ | DMMぱちタウン | `ptown:import_machines` + `ptown:import_details` | 日次 |
+| 店舗マスタ | DMMぱちタウン | `ptown:import_shops` | 月次 |
+| 設置機種 + 台数 + 店舗詳細 | DMMぱちタウン | `ptown:sync_shop_machines` | 日次 |
+| 交換率 | ユーザー投稿 | （未実装） | リアルタイム |
+| ランキング・集計 | 内部計算 | `ranking:refresh` / `play_records:refresh_summaries` | 日次 |
+
 ## 主要モデル
 | モデル | 概要 |
 |--------|------|
 | Prefecture | 47都道府県 (seed) |
-| Shop | 店舗 (5,761件。レート・換金率・台数・駐車場・電話・朝入場・アクセス・特徴・喫煙詳細等) |
-| MachineModel | パチスロ機種 (active: ~1,300 / inactive: ~3,500。ptown_id, type_detail, ceiling_info, reset_info, display_typeあり) |
-| ShopMachineModel | 店舗×機種の設置紐づけ (N:N中間テーブル) |
+| Shop | 店舗 (DMMぱちタウンから取得。ptown_shop_id必須) |
+| MachineModel | パチスロ機種 (DMMぱちタウンから取得。ptown_id必須。ceiling_info, reset_info, image_url等) |
+| ShopMachineModel | 店舗×機種の設置紐づけ (N:N中間テーブル、unit_count付き) |
 | Vote | 設定記録 (voter_tokenで匿名識別。confirmed_setting配列あり) |
 | VoteSummary | 記録集計キャッシュ (Vote保存時に自動更新) |
 | SnsReport | SNS/RSS自動収集データ (トロフィー・確定演出情報、日次バッチ停止中) |
@@ -94,37 +105,23 @@ bin/dev  # サーバー起動 (Tailwind watch + Rails)
 bundle exec rspec  # 533 examples, 0 failures, 72% coverage
 ```
 
-## P-WORLDスクレイピング設計
-- **統合メソッド**: `PworldScraper.sync_shop_from_pworld(shop, cleanup_stale:, update_details:)` が単一エントリポイント
-  - 1回のHTTPリクエストで機種リスト + 台数 + 店舗詳細を全取得
-  - `normalize_slug(name)` で全slugを統一生成
-  - 数字画像は `@digit_image_cache` でクロスショップキャッシュ
-- **パチンコ判定**: `extract_slot_links(doc)` が `data-machine-type="S"` で構造判別。正規表現はフォールバック専用
+## DMMぱちタウン スクレイピング設計
+- **モジュール**: `PtownScraper` (`lib/tasks/ptown.rake`)
+- **BASE_URL**: `https://p-town.dmm.com`
+- **レート制限**: `sleep 3.0` (1リクエストあたり)
+- **正規化**: `normalize_slug()` で NFKC正規化 + 空白→ハイフン + 記号除去 + downcase
+- **core_name()**: 接頭辞(L/S/パチスロ/スマスロ等)・末尾型式コード除去で重複検出用
+- **parse_shop_detail()**: JSON-LDから店舗基本情報 + #anc-slot セクションから機種リスト取得
 
 ## Render.com バッチスケジュール (render.yaml)
 | cronジョブ | スケジュール(UTC) | 内容 |
 |-----------|------------------|------|
-| `yomislo-daily-refresh` | 0 18 * * * | 新台 + 全店同期(機種+台数) ~4h |
-| `yomislo-daily-aggregation` | 0 19 * * * | ランキング+収支+Profile (数秒、SNS停止中) |
-| `yomislo-monthly` | 0 18 1 * * | 全店フル同期(機種+台数+詳細) ~4h |
+| `yomislo-daily-refresh` | 0 18 * * * | 機種マスタ + 全店設置機種同期 ~5h |
+| `yomislo-daily-aggregation` | 0 19 * * * | ランキング+収支+Profile (数秒) |
+| `yomislo-monthly` | 0 18 1 * * | 店舗マスタ + 機種詳細 + 設置機種フル同期 ~5h |
 
 - 毎月1日: daily-refresh はスキップ、monthly が代わりに実行
 - recurring.yml は Solid Queue 無効のため参照用のみ
-
-## Rakeタスク（pworld:）
-| タスク | 説明 |
-|--------|------|
-| `scrape_shops[slug]` | 都道府県の店舗をP-WORLDからインポート |
-| `scrape_shop_details` | 全店舗の詳細情報を取得（営業時間/駐車場/電話等、約4時間） |
-| `scrape_shop_details_by_pref[slug]` | 県単位で詳細取得 |
-| `refresh_shop_machines` | 全店舗の設置機種リスト更新（sync_shop_from_pworld経由） |
-| `refresh_by_pref[slug]` | 県単位で設置機種更新 |
-| `import_machines` | 機種マスタ更新（新台含む） |
-| `cleanup_orphan_machines` | 設置0の機種を非アクティブ化 |
-| `update_unit_counts` | 全店舗の機種別設置台数を更新（数字画像デコード方式） |
-| `update_unit_counts_by_pref[slug]` | 県単位で設置台数更新 |
-| `weekly_refresh` | 週次バッチ（新台+設置機種+クリーンアップ） |
-| `monthly_refresh` | 月次バッチ（店舗詳細の全項目再取得） |
 
 ## Rakeタスク（ptown:）
 | タスク | 説明 |
@@ -132,7 +129,12 @@ bundle exec rspec  # 533 examples, 0 failures, 72% coverage
 | `import_machines` | DMMぱちタウンから機種一覧取得・更新 |
 | `import_details` | DMMぱちタウンから機種詳細（天井・リセット・タイプ）取得 |
 | `import_all` | 一覧→詳細の全取得 |
+| `import_shops[slug]` | DMMぱちタウンから店舗一覧取得（都道府県別 or 全国） |
+| `sync_shop_machines[slug]` | 設置機種+台数+店舗詳細を同期（都道府県別 or 全国） |
 | `import_events[area]` | DMMぱちタウンからイベント情報取得（取材・新台入替等） |
+| `merge_duplicates` | core_name一致で重複機種をマージ |
+| `cleanup` | type_detail汚染修正、is_smart_slot補正、孤立機種の再アクティブ化 |
+| `purge_pworld` | P-WORLD由来データの一括整理（ユーザーデータ移行→機種inactive化→店舗削除） |
 
 ## Rakeタスク（ranking: / play_records:）
 | タスク | 説明 |
@@ -152,18 +154,15 @@ bundle exec rspec  # 533 examples, 0 failures, 72% coverage
 ## データ品質ルール（毎回チェック必須）
 
 ### スクレイピング後の必須チェック
-1. **パチンコ混入チェック**: P-WORLDの `data-machine-type="S"` セクションからのみスロットを取得（`extract_slot_links`）。正規表現フィルタ (`pachinko_name?`) はフォールバック用のみ
-2. **重複チェック**: Unicode NFKC正規化で全角/半角の重複がないか
-3. **件数の妥当性チェック**: 変更前後の件数を表示し、大幅な増減がないか確認
-4. **レート・設備情報の取得率を報告** (目標: レート75%+, 設備88%+)
+1. **重複チェック**: Unicode NFKC正規化 + `core_name()` で全角/半角・接頭辞の重複がないか
+2. **件数の妥当性チェック**: 変更前後の件数を表示し、大幅な増減がないか確認
+3. **パチンコ混入チェック**: `pachinko_name?` でパチンコ機種が混入していないか
 
-### P-WORLDスクレイピング規約
-- エンコーディング: EUC-JP (`Encoding::EUC_JP`)
-- レート制限: `sleep 2.5` (1リクエストあたり)
-- User-Agent: YomiSloBot UA使用
-- Net::HTTP直接使用 (WebFetchは404になる)
-- **同一ページの重複フェッチ禁止**: 新データ取得は `sync_shop_from_pworld` に統合する
-- **パチンコ判定**: `data-machine-type="S"` 構造判別が正。正規表現は不正確
+### DMMぱちタウンスクレイピング規約
+- レート制限: `sleep 3.0` (1リクエストあたり)
+- User-Agent: 標準ブラウザUA使用
+- Net::HTTP + Nokogiri
+- **機種名正規化**: NFKC正規化必須。`core_name()` で接頭辞/末尾型式コード除去
 
 ## UI/フロントエンド規約
 
@@ -184,7 +183,7 @@ bundle exec rspec  # 533 examples, 0 failures, 72% coverage
 - 機種記録行: コンパクトさ重視（縦幅を抑える）
 
 ## Rakeタスク命名規約
-- namespace: `pworld:`
-- 都道府県指定: `rake pworld:task_name[prefecture_slug]`
-- 全国一括: `rake pworld:task_name` (引数なし)
+- namespace: `ptown:`
+- 都道府県指定: `rake ptown:task_name[prefecture_slug]`
+- 全国一括: `rake ptown:task_name` (引数なし)
 - 進捗表示: `puts "#{index}/#{total} ..."` 形式

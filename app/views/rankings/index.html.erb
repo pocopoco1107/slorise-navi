@@ -50,7 +50,7 @@
   <%# === Prefecture Selector (shown only when scope=prefecture) === %>
   <% if @scope == "prefecture" && @prefectures %>
     <div class="mb-4">
-      <select onchange="(function(el){ var url = new URL(window.location); url.searchParams.set('prefecture_id', el.value); Turbo.visit(url.toString()); })(this)"
+      <select id="ranking_prefecture_select" data-controller="select-navigate" data-select-navigate-param-value="prefecture_id" data-action="change->select-navigate#change"
               class="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground min-h-[44px]">
         <option value="">都道府県を選択</option>
         <% @prefectures.each do |pref| %>

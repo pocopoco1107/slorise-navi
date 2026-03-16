@@ -178,12 +178,12 @@
       <p class="text-xs text-muted-foreground mb-3">
         Cookieが消えるとデータにアクセスできなくなります。トークンを控えておくことをおすすめします。
       </p>
-      <div class="flex items-center gap-2">
-        <code class="flex-1 bg-secondary text-foreground text-xs px-3 py-2 rounded font-mono select-all overflow-x-auto">
+      <div class="flex items-center gap-2" data-controller="clipboard">
+        <code class="flex-1 bg-secondary text-foreground text-xs px-3 py-2 rounded font-mono select-all overflow-x-auto" data-clipboard-target="source">
           <%= cookies[:voter_token] %>
         </code>
         <button type="button"
-                onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent.trim()).then(() => { this.textContent = 'コピー済み'; setTimeout(() => this.textContent = 'コピー', 2000); })"
+                data-clipboard-target="button" data-action="click->clipboard#copy"
                 class="shrink-0 bg-primary text-primary-foreground px-4 py-2.5 rounded text-xs font-medium hover:bg-primary/90 active:scale-95 transition-all min-h-[44px]">
           コピー
         </button>

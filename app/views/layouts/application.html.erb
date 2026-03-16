@@ -24,6 +24,18 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icons/icon-192.svg">
 
+    <script nonce="<%= content_security_policy_nonce %>">
+      // FOUC防止: ページ読み込み前にテーマ適用 (デフォルト: dark)
+      (function() {
+        var theme = localStorage.getItem("theme") || "dark";
+        if (theme === "light") {
+          document.documentElement.classList.remove("dark");
+        } else {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
+
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
@@ -38,17 +50,7 @@
 
     <%= render "shared/footer" %>
 
-    <script>
-      // FOUC防止: ページ読み込み前にテーマ適用 (デフォルト: dark)
-      (function() {
-        var theme = localStorage.getItem("theme") || "dark";
-        if (theme === "light") {
-          document.documentElement.classList.remove("dark");
-        } else {
-          document.documentElement.classList.add("dark");
-        }
-      })();
-
+    <script nonce="<%= content_security_policy_nonce %>">
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/service-worker.js");
       }

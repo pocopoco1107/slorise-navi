@@ -30,8 +30,8 @@ services:
       - key: ADMIN_PASSWORD
         sync: false
 
-  # ── 日次: P-WORLD全店同期（機種リスト+台数を1回のフェッチで取得） ──
-  # 03:00 JST (18:00 UTC前日) — 約4時間
+  # ── 日次: DMMぱちタウン 機種+設置機種同期 ──
+  # 03:00 JST (18:00 UTC前日) — 約5時間
   # ※毎月1日はスキップ (Job内判定、月次ジョブが代わりに実行)
   - type: cron
     name: yomislo-daily-refresh
@@ -39,8 +39,7 @@ services:
     plan: starter
     schedule: "0 18 * * *"
     buildCommand: ./bin/render-build.sh
-    startCommand: >
-      bundle exec rails runner "PworldScraper.import_new_machines_from_schedule; DailyMachineRefreshJob.perform_now"
+    startCommand: bundle exec rails runner "DailyMachineRefreshJob.perform_now"
     envVars: &batch-env
       - key: DATABASE_URL
         fromDatabase:
@@ -53,9 +52,8 @@ services:
       - key: RAILS_LOG_TO_STDOUT
         value: "1"
 
-  # ── 日次: 軽量集計バッチ（1つにまとめて $1/月） ──────────
+  # ── 日次: 軽量集計バッチ ──────────
   # ランキング + 収支集計 + VoterProfile — 04:00 JST (19:00 UTC前日)
-  # NOTE: SNS収集は一旦停止（有効なフィードが少なく効果薄）
   - type: cron
     name: yomislo-daily-aggregation
     runtime: ruby
@@ -72,8 +70,8 @@ services:
       "
     envVars: *batch-env
 
-  # ── 月次: P-WORLD全店フル同期（機種+台数+店舗詳細を1回で取得） ──
-  # 毎月1日 03:00 JST (前月末日 18:00 UTC) — 約4時間
+  # ── 月次: DMMぱちタウン 店舗+機種+詳細+設置機種フル同期 ──
+  # 毎月1日 03:00 JST (前月末日 18:00 UTC) — 約5時間
   - type: cron
     name: yomislo-monthly
     runtime: ruby

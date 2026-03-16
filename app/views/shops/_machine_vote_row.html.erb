@@ -58,7 +58,7 @@
           <img src="<%= machine_model.image_url %>"
                alt="" loading="lazy"
                class="w-8 h-8 object-contain rounded bg-secondary shrink-0"
-               onerror="this.style.display='none'">
+               data-controller="image-fallback" data-action="error->image-fallback#error">
         <% end %>
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1.5">
@@ -257,6 +257,7 @@
                 <span data-result-input-target="sign" class="text-primary">+</span>
               </button>
               <input type="number" min="0" max="999999" placeholder="収支(枚)" inputmode="numeric"
+                     name="play_record[amount_display]"
                      data-result-input-target="amount"
                      data-action="input->result-input#input"
                      class="flex-1 min-w-0 border border-input bg-background text-foreground rounded-md px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring tabular-nums min-h-[36px]">

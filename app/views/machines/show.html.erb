@@ -47,7 +47,7 @@
                alt="<%= @machine_model.name %>"
                loading="lazy"
                class="w-24 h-24 sm:w-32 sm:h-32 object-contain rounded-lg bg-secondary"
-               onerror="this.parentElement.style.display='none'">
+               data-controller="image-fallback" data-image-fallback-hide-parent-value="true" data-action="error->image-fallback#error">
         </div>
       <% end %>
 
@@ -420,7 +420,7 @@
       <div class="flex items-center gap-2 flex-wrap">
         <span class="text-xs text-muted-foreground font-medium shrink-0">都道府県:</span>
         <%= form_tag machine_path(@machine_model.slug), method: :get, class: "flex items-center gap-2 flex-1" do %>
-          <select name="prefecture" onchange="this.form.submit()"
+          <select name="prefecture" data-controller="auto-submit" data-action="change->auto-submit#submit"
                   class="flex-1 min-w-[140px] border border-input bg-background text-foreground rounded-md px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring">
             <option value="">全国</option>
             <% @available_prefectures.each do |pref| %>

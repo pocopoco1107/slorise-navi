@@ -1,32 +1,36 @@
 # frozen_string_literal: true
 
-# Monthly job to fully sync all shops from P-WORLD (1st of each month).
-# 1 HTTP request per shop → machines + unit counts + shop details.
+# Monthly job to fully sync shops, machines, and details from DMMぱちタウン.
+# Runs on the 1st of each month at 03:00 JST.
 class MonthlyShopDetailsJob < ApplicationJob
   queue_as :default
 
   def perform
     $stdout.sync = true
-    total = Shop.where.not(pworld_url: [nil, ""]).count
-    synced = 0
 
-    Shop.where.not(pworld_url: [nil, ""]).includes(:prefecture).find_each.with_index do |shop, index|
-      begin
-        result = PworldScraper.sync_shop_from_pworld(shop, cleanup_stale: true, update_details: true)
-        synced += 1 if result
-      rescue => e
-        Rails.logger.warn("[MonthlyShopDetails] #{shop.name}: #{e.message}")
-      end
-      sleep(PworldScraper::REQUEST_INTERVAL)
-      puts "#{index + 1}/#{total} ..." if (index + 1) % 500 == 0
-    end
+    # 1. 店舗マスタ更新（全国）
+    Rails.logger.info("[MonthlyShopDetails] Importing shops from DMMぱちタウン...")
+    Rake::Task["ptown:import_shops"].invoke
+    Rake::Task["ptown:import_shops"].reenable
 
-    # Deactivate orphan machines
+    # 2. 機種マスタ更新（新台 + 詳細）
+    Rails.logger.info("[MonthlyShopDetails] Importing machines and details...")
+    Rake::Task["ptown:import_machines"].invoke
+    Rake::Task["ptown:import_machines"].reenable
+    Rake::Task["ptown:import_details"].invoke
+    Rake::Task["ptown:import_details"].reenable
+
+    # 3. 全店の設置機種同期
+    Rails.logger.info("[MonthlyShopDetails] Syncing shop machines...")
+    Rake::Task["ptown:sync_shop_machines"].invoke
+    Rake::Task["ptown:sync_shop_machines"].reenable
+
+    # 4. 孤立機種を非アクティブ化
     MachineModel.active
       .left_joins(:shop_machine_models)
       .where(shop_machine_models: { id: nil })
       .update_all(active: false)
 
-    Rails.logger.info("[MonthlyShopDetails] Done: #{synced}/#{total} shops synced")
+    Rails.logger.info("[MonthlyShopDetails] Done")
   end
 end

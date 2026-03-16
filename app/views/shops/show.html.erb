@@ -233,6 +233,7 @@
        class="mb-4">
     <div class="relative">
       <input type="text"
+             id="shop_machine_search"
              data-machine-search-target="input"
              data-action="input->machine-search#search"
              placeholder="機種名を検索して記録..."
@@ -248,6 +249,7 @@
   <div class="mb-3" data-controller="machine-filter">
     <div class="flex items-center gap-2 flex-wrap">
       <input type="text" placeholder="機種名で絞り込み..."
+             id="shop_machine_filter"
              data-machine-filter-target="input"
              data-action="input->machine-filter#filter"
              aria-label="機種名で絞り込み"

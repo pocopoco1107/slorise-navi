@@ -9,20 +9,11 @@
 # このファイルは Solid Queue 有効化時のリファレンス用
 
 production:
-  # 新台マスタ取得 + 全店同期（機種リスト+台数） — 03:00 JST (18:00 UTC前日)
+  # DMMぱちタウン: 機種マスタ + 全店設置機種同期 — 03:00 JST (18:00 UTC前日)
   # ※毎月1日はスキップ（月次ジョブが代わりに実行）
-  daily_new_machines:
-    command: "PworldScraper.import_new_machines_from_schedule"
-    schedule: at 6pm every day
-
   daily_machine_refresh:
     class: DailyMachineRefreshJob
-    schedule: at 6:05pm every day
-
-  # SNS RSS収集+パース — 一旦停止 (有効なRSSフィードが1つのみ、効果薄)
-  # daily_sns_collect:
-  #   command: "SnsCollector.collect_from_rss; SnsCollector.parse_unparsed"
-  #   schedule: at 3am every day
+    schedule: at 6pm every day
 
   # ランキング集計 — 04:00 JST
   ranking_refresh:
@@ -39,7 +30,7 @@ production:
     command: "Vote.where(voted_on: 7.days.ago..Date.current).select(:voter_token).distinct.pluck(:voter_token).each { |t| VoterProfile.refresh_for(t) }"
     schedule: at 8pm every day
 
-  # 全店フル同期（機種+台数+店舗詳細） — 毎月1日 03:00 JST
+  # DMMぱちタウン: 店舗+機種+詳細フル同期 — 毎月1日 03:00 JST
   monthly_shop_details:
     class: MonthlyShopDetailsJob
     schedule: at 6pm on the 1st day of every month

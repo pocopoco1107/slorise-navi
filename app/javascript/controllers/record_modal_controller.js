@@ -39,9 +39,9 @@ export default class extends Controller {
     const backdrop = this.backdropTarget
     const desktop = this._isDesktop()
 
-    // Reset inline styles and show elements
-    backdrop.classList.remove("hidden")
-    panel.classList.remove("hidden")
+    // Show elements (style.display で制御)
+    backdrop.style.display = "block"
+    panel.style.display = "flex"
 
     // Set initial state
     backdrop.style.transition = "opacity 300ms ease"
@@ -92,8 +92,9 @@ export default class extends Controller {
     }
 
     setTimeout(() => {
-      backdrop.classList.add("hidden")
-      panel.classList.add("hidden")
+      // Hide elements (style.display で制御)
+      backdrop.style.display = "none"
+      panel.style.display = "none"
       // Clean up inline styles
       panel.style.transform = ""
       panel.style.opacity = ""

@@ -34,8 +34,8 @@ export default class extends Controller {
     this.isOpen = true
     this.overlayTarget.classList.remove("opacity-0", "pointer-events-none")
     this.overlayTarget.classList.add("opacity-100")
-    this.drawerTarget.classList.remove("translate-x-full")
-    this.drawerTarget.classList.add("translate-x-0")
+    this.drawerTarget.classList.remove("translate-x-full", "invisible")
+    this.drawerTarget.classList.add("translate-x-0", "visible")
     this.lockScroll()
   }
 
@@ -45,6 +45,13 @@ export default class extends Controller {
     this.overlayTarget.classList.remove("opacity-100")
     this.drawerTarget.classList.add("translate-x-full")
     this.drawerTarget.classList.remove("translate-x-0")
+    // visibilityはトランジション完了後に切替（アニメーションを維持）
+    setTimeout(() => {
+      if (!this.isOpen) {
+        this.drawerTarget.classList.add("invisible")
+        this.drawerTarget.classList.remove("visible")
+      }
+    }, 300)
     this.unlockScroll()
   }
 

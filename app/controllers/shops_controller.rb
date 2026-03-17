@@ -116,6 +116,28 @@ class ShopsController < ApplicationController
     render layout: false
   end
 
+  def report_exchange_rate
+    @shop = Shop.find_by!(slug: params[:slug])
+    rate = params[:exchange_rate]
+    unless Shop.exchange_rates.key?(rate)
+      redirect_to shop_path(@shop), alert: "無効な交換率です"
+      return
+    end
+
+    contribution = ShopContribution.find_or_initialize_by(
+      voter_token: voter_token,
+      shop: @shop,
+      contribution_type: :exchange_rate
+    )
+    contribution.value = rate
+    contribution.save!
+
+    # Recalculate points
+    VoterProfile.refresh_for(voter_token)
+
+    redirect_to shop_path(@shop), notice: "交換率を報告しました (+#{VoterProfile::POINT_RULES[:exchange_rate_report]}pt)"
+  end
+
   private
 
   def load_shop_data

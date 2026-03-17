@@ -18,6 +18,7 @@ Rails.application.routes.draw do
       get "dates/:date", action: :show_date, as: :date, constraints: { date: /\d{4}-\d{2}-\d{2}/ }
       get :trend_data
       get :calendar
+      post :report_exchange_rate
     end
     resources :shop_reviews, only: [:create], path: "reviews"
     resources :shop_events, only: [:create], path: "events"
@@ -39,6 +40,7 @@ Rails.application.routes.draw do
 
   get "voter/status", to: "voter#status", as: :voter_status
   post "voter/restore", to: "voter#restore", as: :restore_voter_token
+  patch "voter/display_name", to: "voter#update_display_name", as: :voter_display_name
 
   get "search", to: "search#index"
 

@@ -9,7 +9,8 @@ class FeedbacksController < ApplicationController
     @feedback.voter_token = voter_token
 
     if @feedback.save
-      redirect_to new_feedback_path, notice: "ご意見ありがとうございます！確認次第対応いたします。"
+      VoterProfile.refresh_for(voter_token) if VoterProfile.exists?(voter_token: voter_token)
+      redirect_to new_feedback_path, notice: "ご意見ありがとうございます！(+#{VoterProfile::POINT_RULES[:feedback]}pt)"
     else
       render :new, status: :unprocessable_entity
     end

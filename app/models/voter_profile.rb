@@ -1,14 +1,30 @@
 class VoterProfile < ApplicationRecord
   RANK_TITLES = [
-    { title: "伝説の記録者", min_votes: 1000, min_accuracy: 70.0 },
-    { title: "設定看破マスター", min_votes: 300, min_accuracy: 60.0 },
-    { title: "目利き師", min_votes: 100, min_accuracy: 40.0 },
-    { title: "常連", min_votes: 50 },
-    { title: "記録者", min_votes: 10 },
-    { title: "見習い", min_votes: 0 }
+    { title: "伝説の記録者", min_points: 500, min_accuracy: 70.0 },
+    { title: "設定看破マスター", min_points: 200, min_accuracy: 60.0 },
+    { title: "目利き師", min_points: 80, min_accuracy: 40.0 },
+    { title: "常連", min_points: 30 },
+    { title: "記録者", min_points: 5 },
+    { title: "見習い", min_points: 0 }
   ].freeze
 
+  # ポイント付与ルール
+  POINT_RULES = {
+    vote: 1,               # 設定/リセット記録
+    confirmed_setting: 2,   # 確定情報の記録
+    play_record: 1,         # 収支記録
+    feedback: 5,            # フィードバック送信
+    exchange_rate_report: 3, # 交換率報告
+    display_name_set: 3,    # ユーザー名設定(初回)
+    streak_3: 2,            # 3日連続ボーナス
+    streak_7: 5,            # 7日連続ボーナス
+    streak_30: 15,          # 30日連続ボーナス
+    multi_shop: 3,          # 3店舗以上で記録
+    multi_prefecture: 5     # 3県以上で記録
+  }.freeze
+
   validates :voter_token, presence: true, uniqueness: true
+  validates :display_name, length: { maximum: 20 }, allow_blank: true
 
   # --- Class methods ---
 
@@ -36,8 +52,11 @@ class VoterProfile < ApplicationRecord
     profile.accuracy_majority = calculate_accuracy_majority(voter_token, votes)
     profile.high_setting_rate = calculate_high_setting_rate(votes)
 
-    # Rank title
-    profile.rank_title = determine_rank(profile.total_votes, profile.accuracy_majority)
+    # Points calculation
+    profile.points = calculate_points(voter_token, profile)
+
+    # Rank title (now based on points)
+    profile.rank_title = determine_rank(profile.points, profile.accuracy_majority)
 
     profile.save!
     profile
@@ -47,13 +66,13 @@ class VoterProfile < ApplicationRecord
     current_found = false
     RANK_TITLES.reverse_each do |rank|
       if current_found
-        votes_needed = [rank[:min_votes] - profile.total_votes, 0].max
+        points_needed = [rank[:min_points] - profile.points, 0].max
         accuracy_needed = rank[:min_accuracy] && (profile.accuracy_majority.nil? || profile.accuracy_majority < rank[:min_accuracy]) ? rank[:min_accuracy] : nil
         return {
           title: rank[:title],
-          votes_needed: votes_needed,
+          points_needed: points_needed,
           accuracy_needed: accuracy_needed
-        } if votes_needed > 0 || accuracy_needed
+        } if points_needed > 0 || accuracy_needed
       end
       current_found = true if rank[:title] == profile.rank_title
     end
@@ -135,9 +154,48 @@ class VoterProfile < ApplicationRecord
     (high_count.to_f / total * 100).round(1)
   end
 
-  def self.determine_rank(total_votes, accuracy)
+  def self.calculate_points(voter_token, profile)
+    pts = 0
+
+    # 記録ポイント (1pt per vote)
+    votes = Vote.where(voter_token: voter_token)
+    pts += votes.count * POINT_RULES[:vote]
+
+    # 確定情報ボーナス (2pt per vote with confirmed_setting)
+    pts += votes.where.not(confirmed_setting: []).count * POINT_RULES[:confirmed_setting]
+
+    # 収支記録 (1pt per play record)
+    pts += PlayRecord.where(voter_token: voter_token).count * POINT_RULES[:play_record]
+
+    # フィードバック (5pt per feedback)
+    pts += Feedback.where(voter_token: voter_token).count * POINT_RULES[:feedback]
+
+    # 交換率報告 (3pt per report)
+    pts += ShopContribution.where(voter_token: voter_token).count * POINT_RULES[:exchange_rate_report]
+
+    # ユーザー名設定 (3pt, one-time)
+    pts += POINT_RULES[:display_name_set] if profile.display_name.present?
+
+    # ストリークボーナス
+    max_streak = profile.max_streak || 0
+    pts += POINT_RULES[:streak_30] if max_streak >= 30
+    pts += POINT_RULES[:streak_7] if max_streak >= 7
+    pts += POINT_RULES[:streak_3] if max_streak >= 3
+
+    # 多店舗ボーナス (3店舗以上)
+    shop_count = votes.distinct.count(:shop_id)
+    pts += POINT_RULES[:multi_shop] if shop_count >= 3
+
+    # 多県ボーナス (3県以上)
+    pref_count = votes.joins(:shop).distinct.count("shops.prefecture_id")
+    pts += POINT_RULES[:multi_prefecture] if pref_count >= 3
+
+    pts
+  end
+
+  def self.determine_rank(points, accuracy)
     RANK_TITLES.each do |rank|
-      next if total_votes < rank[:min_votes]
+      next if points < rank[:min_points]
       if rank[:min_accuracy]
         next if accuracy.nil? || accuracy < rank[:min_accuracy]
       end

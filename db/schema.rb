@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_13_131601) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_16_092731) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -152,6 +152,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_13_131601) do
     t.string "voter_token"
     t.index ["reportable_type", "reportable_id"], name: "index_reports_on_reportable"
     t.index ["reporter_id"], name: "index_reports_on_reporter_id"
+  end
+
+  create_table "shop_contributions", force: :cascade do |t|
+    t.string "voter_token", null: false
+    t.bigint "shop_id", null: false
+    t.integer "contribution_type", default: 0, null: false
+    t.string "value", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_id"], name: "index_shop_contributions_on_shop_id"
+    t.index ["voter_token", "shop_id", "contribution_type"], name: "idx_shop_contributions_unique", unique: true
   end
 
   create_table "shop_events", force: :cascade do |t|
@@ -325,6 +336,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_13_131601) do
     t.string "rank_title", default: "見習い", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "display_name"
+    t.integer "points", default: 0, null: false
     t.index ["rank_title"], name: "index_voter_profiles_on_rank_title"
     t.index ["total_votes"], name: "index_voter_profiles_on_total_votes"
     t.index ["voter_token"], name: "index_voter_profiles_on_voter_token", unique: true
@@ -369,6 +382,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_13_131601) do
   add_foreign_key "machine_guide_links", "machine_models"
   add_foreign_key "play_records", "machine_models"
   add_foreign_key "play_records", "shops"
+  add_foreign_key "shop_contributions", "shops"
   add_foreign_key "shop_events", "shops"
   add_foreign_key "shop_machine_models", "machine_models"
   add_foreign_key "shop_machine_models", "shops"

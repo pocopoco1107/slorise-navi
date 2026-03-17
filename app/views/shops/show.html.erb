@@ -93,6 +93,23 @@
       <div>
         <span class="text-xs text-muted-foreground block">換金率</span>
         <span class="font-medium text-foreground"><%= @shop.exchange_rate_display %></span>
+        <%
+          existing_report = ShopContribution.find_by(voter_token: cookies[:voter_token], shop: @shop, contribution_type: :exchange_rate)
+        %>
+        <% unless existing_report %>
+          <%= form_tag report_exchange_rate_shop_path(@shop.slug), method: :post, class: "mt-1 flex items-center gap-1" do %>
+            <select name="exchange_rate" class="text-[11px] border border-input bg-background text-foreground rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-ring">
+              <option value="">報告する</option>
+              <option value="equal_rate">等価</option>
+              <option value="rate_56">5.6枚</option>
+              <option value="rate_50">5.0枚</option>
+              <option value="non_equal">非等価</option>
+            </select>
+            <button type="submit" class="text-[10px] text-primary font-medium hover:underline min-h-[28px]">+<%= VoterProfile::POINT_RULES[:exchange_rate_report] %>pt</button>
+          <% end %>
+        <% else %>
+          <span class="text-[10px] text-muted-foreground mt-0.5 block">報告済み</span>
+        <% end %>
       </div>
       <div>
         <span class="text-xs text-muted-foreground block">スロット台数</span>

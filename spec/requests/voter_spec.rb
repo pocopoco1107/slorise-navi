@@ -5,7 +5,7 @@ RSpec.describe "Voter", type: :request do
     it "renders without voter_token cookie" do
       get voter_status_path
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("はじめての記録で称号GET!")
+      expect(response.body).to include("まずは1件、記録してみよう")
     end
 
     it "renders with voter_token but no votes" do
@@ -28,7 +28,7 @@ RSpec.describe "Voter", type: :request do
         get voter_status_path, headers: { "Cookie" => "voter_token=#{token}" }
         expect(response).to have_http_status(:ok)
         expect(response.body).to include("ユーザー#1234")
-        expect(response.body).to include("累計記録")
+        expect(response.body).to include("設定記録")
         expect(response.body).to include("実績バッジ")
       end
 

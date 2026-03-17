@@ -210,49 +210,49 @@ RSpec.describe VoterProfile, type: :model do
     end
   end
 
-  describe ".determine_rank boundary values" do
-    it "returns 見習い for 0 votes" do
+  describe ".determine_rank boundary values (points-based)" do
+    it "returns 見習い for 0 points" do
       expect(VoterProfile.send(:determine_rank, 0, nil)).to eq("見習い")
     end
 
-    it "returns 見習い for 9 votes" do
-      expect(VoterProfile.send(:determine_rank, 9, nil)).to eq("見習い")
+    it "returns 見習い for 4 points" do
+      expect(VoterProfile.send(:determine_rank, 4, nil)).to eq("見習い")
     end
 
-    it "returns 記録者 for exactly 10 votes" do
-      expect(VoterProfile.send(:determine_rank, 10, nil)).to eq("記録者")
+    it "returns 記録者 for exactly 5 points" do
+      expect(VoterProfile.send(:determine_rank, 5, nil)).to eq("記録者")
     end
 
-    it "returns 常連 for exactly 50 votes" do
-      expect(VoterProfile.send(:determine_rank, 50, nil)).to eq("常連")
+    it "returns 常連 for exactly 30 points" do
+      expect(VoterProfile.send(:determine_rank, 30, nil)).to eq("常連")
     end
 
-    it "returns 目利き師 for 100 votes with 40% accuracy" do
-      expect(VoterProfile.send(:determine_rank, 100, 40.0)).to eq("目利き師")
+    it "returns 目利き師 for 80 points with 40% accuracy" do
+      expect(VoterProfile.send(:determine_rank, 80, 40.0)).to eq("目利き師")
     end
 
-    it "returns 常連 for 100 votes with low accuracy (below 40%)" do
-      expect(VoterProfile.send(:determine_rank, 100, 39.9)).to eq("常連")
+    it "returns 常連 for 80 points with low accuracy (below 40%)" do
+      expect(VoterProfile.send(:determine_rank, 80, 39.9)).to eq("常連")
     end
 
-    it "returns 常連 for 100 votes with nil accuracy" do
-      expect(VoterProfile.send(:determine_rank, 100, nil)).to eq("常連")
+    it "returns 常連 for 80 points with nil accuracy" do
+      expect(VoterProfile.send(:determine_rank, 80, nil)).to eq("常連")
     end
 
-    it "returns 設定看破マスター for 300 votes with 60% accuracy" do
-      expect(VoterProfile.send(:determine_rank, 300, 60.0)).to eq("設定看破マスター")
+    it "returns 設定看破マスター for 200 points with 60% accuracy" do
+      expect(VoterProfile.send(:determine_rank, 200, 60.0)).to eq("設定看破マスター")
     end
 
-    it "returns 目利き師 for 300 votes with 40% accuracy (below 60%)" do
-      expect(VoterProfile.send(:determine_rank, 300, 40.0)).to eq("目利き師")
+    it "returns 目利き師 for 200 points with 40% accuracy (below 60%)" do
+      expect(VoterProfile.send(:determine_rank, 200, 40.0)).to eq("目利き師")
     end
 
-    it "returns 伝説の記録者 for 1000 votes with 70% accuracy" do
-      expect(VoterProfile.send(:determine_rank, 1000, 70.0)).to eq("伝説の記録者")
+    it "returns 伝説の記録者 for 500 points with 70% accuracy" do
+      expect(VoterProfile.send(:determine_rank, 500, 70.0)).to eq("伝説の記録者")
     end
 
-    it "returns 設定看破マスター for 1000 votes with 60% accuracy (below 70%)" do
-      expect(VoterProfile.send(:determine_rank, 1000, 60.0)).to eq("設定看破マスター")
+    it "returns 設定看破マスター for 500 points with 60% accuracy (below 70%)" do
+      expect(VoterProfile.send(:determine_rank, 500, 60.0)).to eq("設定看破マスター")
     end
   end
 

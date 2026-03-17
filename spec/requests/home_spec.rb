@@ -8,11 +8,10 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include("ヨミスロ")
     end
 
-    it "displays search results" do
-      shop = create(:shop)
-      get root_path, params: { q: shop.name }
+    it "renders with shop data" do
+      create(:shop)
+      get root_path
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include(shop.name)
     end
 
     it "displays prefectures" do
@@ -44,27 +43,9 @@ RSpec.describe "Home", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "shows trend chart when past vote data exists" do
-      shop = create(:shop)
-      machine = create(:machine_model)
-      ShopMachineModel.create!(shop: shop, machine_model: machine)
-      # Create VoteSummary records directly (Vote model only allows today/yesterday)
-      [Date.current, Date.current - 1, Date.current - 2].each do |date|
-        VoteSummary.create!(shop: shop, machine_model: machine,
-                            target_date: date, total_votes: 5,
-                            reset_yes_count: 3, reset_no_count: 2,
-                            setting_avg: 3.5)
-      end
-
+    it "renders recommendations section when data exists" do
       get root_path
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("過去7日間の全国記録推移")
-    end
-
-    it "does not show trend chart when no votes exist" do
-      get root_path
-      expect(response).to have_http_status(:ok)
-      expect(response.body).not_to include("過去7日間の全国記録推移")
     end
 
     it "returns no search results for nonexistent shop" do

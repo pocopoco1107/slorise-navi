@@ -2,11 +2,11 @@ class HomeController < ApplicationController
   include TrendData
 
   def index
-    desc = "全国5,700店舗のパチスロ設定・リセット傾向を匿名で記録・可視化。収支カレンダーで自分のデータも管理できる無料サイト。"
-    set_meta_tags title: "パチスロ設定・リセット記録",
+    desc = "パチスロの設定・リセット情報をみんなで記録して傾向をチェック。ログイン不要、匿名OK。"
+    set_meta_tags title: "みんなの記録でパチスロの設定が見える",
                   description: desc,
                   keywords: "パチスロ, 設定, リセット, 記録, 設定判別, スロット",
-                  og: { title: "ヨミスロ - パチスロ設定・リセット記録",
+                  og: { title: "ヨミスロ - みんなの記録でパチスロの設定が見える",
                         description: desc,
                         type: "website",
                         url: root_url },
@@ -60,22 +60,24 @@ class HomeController < ApplicationController
     end
 
     # Weekly voter ranking — top 10 by vote count this week
-    @weekly_ranking = Vote.where(voted_on: week_start..Date.current)
-                          .group(:voter_token)
-                          .order(Arel.sql("COUNT(*) DESC"))
-                          .limit(10)
-                          .pluck(Arel.sql("voter_token, COUNT(*) as vote_count"))
-                          .map.with_index(1) { |(token, count), rank|
-                            { rank: rank, label: "ユーザー##{token.last(4)}", count: count }
-                          }
-
-    # 7-day nationwide trend (scoped to last 7 days to avoid full table scan)
-    @trend_data = build_trend_data(VoteSummary.where(target_date: 6.days.ago.to_date..Date.current))
+    ranking_rows = Vote.where(voted_on: week_start..Date.current)
+                       .group(:voter_token)
+                       .order(Arel.sql("COUNT(*) DESC"))
+                       .limit(10)
+                       .pluck(Arel.sql("voter_token, COUNT(*) as vote_count"))
+    if ranking_rows.any?
+      profiles = VoterProfile.where(voter_token: ranking_rows.map(&:first))
+                              .pluck(:voter_token, :display_name).to_h
+      @weekly_ranking = ranking_rows.map.with_index(1) { |(token, count), rank|
+        label = profiles[token].presence || "ユーザー##{token.last(4)}"
+        { rank: rank, label: label, count: count }
+      }
+    else
+      @weekly_ranking = []
+    end
 
     # AI おすすめ店舗 (全国TOP5)
     @recommendations = RecommendationService.top_nationwide(limit: 5)
-
-    @recent_shops = Shop.includes(:prefecture).order(updated_at: :desc).limit(10)
 
     # Play records count for pillar card
     @play_records_count = Rails.cache.fetch("home/play_records_count", expires_in: 10.minutes) { PlayRecord.count }

@@ -10,7 +10,7 @@ RSpec.describe "Home page", type: :system do
       visit root_path
 
       expect(page).to have_content("みんなの記録")
-      expect(page).to have_content("傾向が見える")
+      expect(page).to have_content("設定が見えてくる")
       expect(page).to have_content("累計記録")
       expect(page).to have_content("店舗")
       expect(page).to have_content("今日の記録")
@@ -40,12 +40,11 @@ RSpec.describe "Home page", type: :system do
     end
   end
 
-  describe "recent shops section" do
-    it "displays recently updated shops" do
+  describe "prefecture section" do
+    it "displays prefecture grid" do
       visit root_path
 
-      expect(page).to have_content("最近の更新店舗")
-      expect(page).to have_content("テスト店舗X")
+      expect(page).to have_content("都道府県から探す")
     end
   end
 
@@ -61,7 +60,7 @@ RSpec.describe "Home page", type: :system do
     it "displays the status check card" do
       visit root_path
 
-      expect(page).to have_content("称号を獲得しよう")
+      expect(page).to have_content("記録するほど称号が上がる")
       expect(page).to have_link("ステータスを見る", href: voter_status_path)
     end
   end

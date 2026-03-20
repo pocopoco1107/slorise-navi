@@ -1,0 +1,84 @@
+<turbo-frame id="exchange_rates_<%= shop.id %>">
+  <div class="bg-card rounded-lg p-4 mb-6 border-b border-border/50">
+    <h2 class="text-sm font-semibold text-foreground mb-3 border-b border-border/50 pb-2 flex items-center gap-1.5">
+      交換率
+      <span class="text-[10px] font-normal text-muted-foreground">タップで報告</span>
+    </h2>
+
+    <%
+      denominations = [
+        { key: "twenty_yen", label: "20スロ", unit: "円/枚", placeholder: "例: 18.0", step: 0.1, min: 1.0, max: 20.0 },
+        { key: "five_yen",   label: "5スロ",  unit: "枚交換", placeholder: "例: 5.6",  step: 0.1, min: 1.0, max: 50.0 }
+      ]
+    %>
+
+    <div class="space-y-4">
+      <% denominations.each do |denom| %>
+        <%
+          summary     = exchange_rate_summaries[denom[:key]]
+          user_report = user_reports[denom[:key]]
+          user_rate   = user_report&.rate_key
+        %>
+        <div>
+          <p class="text-xs font-semibold text-muted-foreground mb-1.5"><%= denom[:label] %></p>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <%# 等価ボタン %>
+            <%
+              is_touka = user_rate == "touka"
+              btn_class = is_touka \
+                ? "bg-primary text-primary-foreground ring-2 ring-primary/40" \
+                : "bg-muted/50 text-muted-foreground hover:bg-muted"
+            %>
+            <%= form_with url: exchange_rate_reports_path, data: { turbo: true, controller: "vote", action: "submit->vote#submit" } do |f| %>
+              <%= f.hidden_field :shop_id, value: shop.id %>
+              <%= f.hidden_field :denomination, value: denom[:key] %>
+              <%= f.hidden_field :rate_key, value: "touka" %>
+              <%= f.submit "等価",
+                  class: "#{btn_class} rounded-lg px-4 py-2 text-xs font-bold active:scale-95 transition-all duration-150 min-h-[44px] cursor-pointer" %>
+            <% end %>
+
+            <%# 自由入力 %>
+            <%
+              is_custom = user_rate.present? && user_rate != "touka"
+              custom_value = is_custom ? user_rate : ""
+            %>
+            <%= form_with url: exchange_rate_reports_path, class: "flex items-center", data: { turbo: true } do |f| %>
+              <%= f.hidden_field :shop_id, value: shop.id %>
+              <%= f.hidden_field :denomination, value: denom[:key] %>
+              <div class="flex items-center rounded-lg overflow-hidden <%= is_custom ? 'ring-2 ring-primary/40' : '' %>">
+                <%= f.number_field :rate_key,
+                    value: custom_value,
+                    placeholder: denom[:placeholder],
+                    step: denom[:step],
+                    min: denom[:min],
+                    max: denom[:max],
+                    class: "w-20 px-2 py-2 text-xs bg-muted/50 text-foreground border-0 focus:outline-none focus:ring-0 min-h-[44px] text-center #{is_custom ? 'bg-primary/10 font-bold' : ''}",
+                    "aria-label": "交換率を入力" %>
+                <%= f.submit denom[:unit],
+                    class: "bg-muted/50 text-muted-foreground hover:bg-muted px-2 py-2 text-xs font-bold min-h-[44px] cursor-pointer border-l border-border/50 whitespace-nowrap #{is_custom ? 'bg-primary text-primary-foreground' : ''}" %>
+              </div>
+            <% end %>
+          </div>
+
+          <%# コンセンサス結果 %>
+          <div class="mt-1.5">
+            <% if summary && summary.total_reports > 0 %>
+              <% if summary.consensus_rate.present? %>
+                <span class="text-[10px] text-muted-foreground">
+                  <span class="font-bold text-foreground"><%= summary.consensus_label %></span>
+                  (<%= summary.total_reports %>人が報告)
+                </span>
+              <% else %>
+                <span class="text-[10px] text-muted-foreground">
+                  <%= summary.total_reports %>人が報告（意見が分かれています）
+                </span>
+              <% end %>
+            <% else %>
+              <span class="text-[10px] text-muted-foreground">まだ報告がありません</span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</turbo-frame>

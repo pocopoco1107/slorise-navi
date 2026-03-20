@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 # Daily job to sync machine master and shop machines from DMMぱちタウン.
-# Runs at 03:00 JST (~4-5 hours).
-# Skipped on the 1st of each month when MonthlyShopDetailsJob runs instead.
+# Each step runs independently — a failure in one step doesn't block the next.
 class DailyMachineRefreshJob < ApplicationJob
+  include StepRunner
+
   queue_as :default
 
   def perform
@@ -11,22 +12,28 @@ class DailyMachineRefreshJob < ApplicationJob
 
     $stdout.sync = true
 
-    # 1. 機種マスタ更新（新台取り込み）
-    Rails.logger.info("[DailyMachineRefresh] Importing machines from DMMぱちタウン...")
-    Rake::Task["ptown:import_machines"].invoke
-    Rake::Task["ptown:import_machines"].reenable
+    run_step("import_machines") do
+      Rake::Task["ptown:import_machines"].invoke
+      Rake::Task["ptown:import_machines"].reenable
+    end
 
-    # 2. 全店の設置機種同期（台数 + 店舗詳細）
-    Rails.logger.info("[DailyMachineRefresh] Syncing shop machines...")
-    Rake::Task["ptown:sync_shop_machines"].invoke
-    Rake::Task["ptown:sync_shop_machines"].reenable
+    run_step("sync_shop_machines") do
+      Rake::Task["ptown:sync_shop_machines"].invoke
+      Rake::Task["ptown:sync_shop_machines"].reenable
+    end
 
-    # 3. 孤立機種を非アクティブ化
-    MachineModel.active
-      .left_joins(:shop_machine_models)
-      .where(shop_machine_models: { id: nil })
-      .update_all(active: false)
+    run_step("cleanup") { deactivate_orphan_machines }
 
-    Rails.logger.info("[DailyMachineRefresh] Done")
+    log_summary
+  end
+
+  private
+
+  def log_summary
+    active = MachineModel.where(active: true).count
+    synced = Shop.where.not(last_synced_at: nil).where(last_synced_at: 24.hours.ago..).count
+    total = Shop.where.not(ptown_shop_id: nil).count
+    smm = ShopMachineModel.count
+    Rails.logger.info("[#{log_prefix}] サマリー: アクティブ機種=#{active}, 同期済み店舗=#{synced}/#{total}, SMM=#{smm}")
   end
 end

@@ -1,36 +1,49 @@
 # frozen_string_literal: true
 
 # Monthly job to fully sync shops, machines, and details from DMMぱちタウン.
-# Runs on the 1st of each month at 03:00 JST.
+# Each step runs independently — a failure in one step doesn't block the next.
 class MonthlyShopDetailsJob < ApplicationJob
+  include StepRunner
+
   queue_as :default
 
   def perform
     $stdout.sync = true
 
-    # 1. 店舗マスタ更新（全国）
-    Rails.logger.info("[MonthlyShopDetails] Importing shops from DMMぱちタウン...")
-    Rake::Task["ptown:import_shops"].invoke
-    Rake::Task["ptown:import_shops"].reenable
+    run_step("import_shops") do
+      Rake::Task["ptown:import_shops"].invoke
+      Rake::Task["ptown:import_shops"].reenable
+    end
 
-    # 2. 機種マスタ更新（新台 + 詳細）
-    Rails.logger.info("[MonthlyShopDetails] Importing machines and details...")
-    Rake::Task["ptown:import_machines"].invoke
-    Rake::Task["ptown:import_machines"].reenable
-    Rake::Task["ptown:import_details"].invoke
-    Rake::Task["ptown:import_details"].reenable
+    run_step("import_machines") do
+      Rake::Task["ptown:import_machines"].invoke
+      Rake::Task["ptown:import_machines"].reenable
+    end
 
-    # 3. 全店の設置機種同期
-    Rails.logger.info("[MonthlyShopDetails] Syncing shop machines...")
-    Rake::Task["ptown:sync_shop_machines"].invoke
-    Rake::Task["ptown:sync_shop_machines"].reenable
+    run_step("import_details") do
+      Rake::Task["ptown:import_details"].invoke
+      Rake::Task["ptown:import_details"].reenable
+    end
 
-    # 4. 孤立機種を非アクティブ化
-    MachineModel.active
-      .left_joins(:shop_machine_models)
-      .where(shop_machine_models: { id: nil })
-      .update_all(active: false)
+    run_step("sync_shop_machines") do
+      ENV["FORCE"] = "1"
+      Rake::Task["ptown:sync_shop_machines"].invoke
+      Rake::Task["ptown:sync_shop_machines"].reenable
+      ENV.delete("FORCE")
+    end
 
-    Rails.logger.info("[MonthlyShopDetails] Done")
+    run_step("cleanup") { deactivate_orphan_machines }
+
+    log_summary
+  end
+
+  private
+
+  def log_summary
+    shops = Shop.count
+    active = MachineModel.where(active: true).count
+    synced = Shop.where.not(last_synced_at: nil).count
+    smm = ShopMachineModel.count
+    Rails.logger.info("[#{log_prefix}] サマリー: 店舗=#{shops}, アクティブ機種=#{active}, 同期済み=#{synced}/#{shops}, SMM=#{smm}")
   end
 end

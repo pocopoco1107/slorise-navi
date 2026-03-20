@@ -5,14 +5,11 @@ export default class extends Controller {
 
   connect() {
     this.abortController = null
-    const favorites = this.getFavorites()
-    if (favorites.length === 0) {
-      this.containerTarget.classList.add("hidden")
-      return
-    }
+    this.containerTarget.style.display = "none"
 
-    // Load favorite shops via fetch
-    this.containerTarget.classList.remove("hidden")
+    const favorites = this.getFavorites()
+    if (favorites.length === 0) return
+
     this.abortController = new AbortController()
     const slugs = favorites.join(",")
     fetch(`/shops/favorites?slugs=${encodeURIComponent(slugs)}`, {
@@ -25,6 +22,7 @@ export default class extends Controller {
         const list = this.containerTarget.querySelector("[data-favorites-list]")
         if (list && html.trim()) {
           list.innerHTML = html
+          this.containerTarget.style.display = ""
         }
       })
       .catch((e) => {

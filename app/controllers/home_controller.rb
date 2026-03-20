@@ -59,22 +59,15 @@ class HomeController < ApplicationController
       @weekly_high_setting_machines = []
     end
 
-    # Weekly voter ranking — top 10 by vote count this week
-    ranking_rows = Vote.where(voted_on: week_start..Date.current)
-                       .group(:voter_token)
-                       .order(Arel.sql("COUNT(*) DESC"))
-                       .limit(10)
-                       .pluck(Arel.sql("voter_token, COUNT(*) as vote_count"))
-    if ranking_rows.any?
-      profiles = VoterProfile.where(voter_token: ranking_rows.map(&:first))
-                              .pluck(:voter_token, :display_name).to_h
-      @weekly_ranking = ranking_rows.map.with_index(1) { |(token, count), rank|
-        label = profiles[token].presence || "ユーザー##{token.last(4)}"
-        { rank: rank, label: label, count: count }
-      }
-    else
-      @weekly_ranking = []
-    end
+    # Points ranking — top 10 by accumulated points
+    top_profiles = VoterProfile.where("points > 0")
+                               .order(points: :desc)
+                               .limit(10)
+                               .pluck(:voter_token, :display_name, :points)
+    @points_ranking = top_profiles.map.with_index(1) { |(token, name, pts), rank|
+      label = name.presence || "ユーザー##{token.last(4)}"
+      { rank: rank, label: label, points: pts }
+    }
 
     # AI おすすめ店舗 (全国TOP5)
     @recommendations = RecommendationService.top_nationwide(limit: 5)
@@ -82,9 +75,26 @@ class HomeController < ApplicationController
     # Play records count for pillar card
     @play_records_count = Rails.cache.fetch("home/play_records_count", expires_in: 10.minutes) { PlayRecord.count }
 
-    # Personal play summary for mini card
+    # Personal data (voter label + play summary)
     token = cookies[:voter_token]
     if token.present?
+      profile = VoterProfile.find_by(voter_token: token)
+      @voter_label = profile&.display_name.presence || "ユーザー##{token.last(4)}"
+      @voter_rank_title = profile&.rank_title
+      @voter_points = profile&.points || 0
+      @voter_streak = profile&.current_streak || 0
+
+      # Earned badges for user card
+      if profile
+        votes = Vote.where(voter_token: token)
+        stats = {
+          total_votes: profile.total_votes,
+          prefectures_count: votes.joins(:shop).distinct.count("shops.prefecture_id"),
+          machines_count: votes.distinct.count(:machine_model_id)
+        }
+        @voter_badges = VoterController::BADGE_DEFINITIONS.select { |b| b[:check].call(stats) }
+      end
+
       agg = PlayRecord.where(voter_token: token, played_on: Date.current.beginning_of_month..Date.current)
                       .pick(
                         Arel.sql("SUM(result_amount)"),

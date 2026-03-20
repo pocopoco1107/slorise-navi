@@ -24,24 +24,6 @@ RSpec.describe "Shops", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
-    it "shows same rate shops in same prefecture" do
-      pref = shop.prefecture
-      same_rate_shop = create(:shop, prefecture: pref, slot_rates: [ "20スロ" ], name: "同レート店舗A")
-      shop.update!(slot_rates: [ "20スロ" ])
-
-      get shop_path(shop.slug)
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include("同レート店舗A")
-      expect(response.body).to include("同レート店舗")
-    end
-
-    it "does not show same rate section when shop has no rates" do
-      shop.update!(slot_rates: [])
-      get shop_path(shop.slug)
-      expect(response).to have_http_status(:ok)
-      expect(response.body).not_to include("同レート店舗")
-    end
-
     it "shows vote summaries when votes exist" do
       machine = create(:machine_model)
       ShopMachineModel.create!(shop: shop, machine_model: machine)

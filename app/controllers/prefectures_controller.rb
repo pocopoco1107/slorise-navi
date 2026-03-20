@@ -5,10 +5,10 @@ class PrefecturesController < ApplicationController
     # Single query: load all shops with columns needed for stats + display
     all_shops = @prefecture.shops
                   .includes(:shop_machine_models)
-                  .select(:id, :name, :slug, :address, :exchange_rate, :slot_rates,
-                          :notes, :business_hours, :parking_spaces, :morning_entry,
+                  .select(:id, :name, :slug, :address,
+                          :business_hours, :parking_spaces, :morning_entry,
                           :prefecture_id, :slot_machines, :total_machines, :phone_number,
-                          :pworld_url, :features)
+                          :features)
                   .order(:address, :name)
                   .to_a
 
@@ -19,9 +19,6 @@ class PrefecturesController < ApplicationController
                               .sort_by { |city, shops| [ -shops.size, city ] }
 
     # Compute all stats in a single pass over the loaded shops array
-    exchange_rate_counts = Hash.new(0)
-    rate_counts = Hash.new(0)
-    facility_counts = Hash.new(0)
     opening_counts = Hash.new(0)
     closing_counts = Hash.new(0)
     parking_total = 0
@@ -30,20 +27,6 @@ class PrefecturesController < ApplicationController
     morning_entry_count = 0
 
     all_shops.each do |shop|
-      # 換金率
-      er = shop.exchange_rate
-      exchange_rate_counts[er] += 1 unless er == "unknown_rate"
-
-      # レート
-      if shop.slot_rates.present?
-        shop.slot_rates.each { |r| rate_counts[r] += 1 }
-      end
-
-      # 設備
-      if shop.notes.present?
-        shop.notes.split("、").each { |f| facility_counts[f.strip] += 1 }
-      end
-
       # 営業時間
       if shop.business_hours.present?
         parts = shop.business_hours.split(/[〜～]/).map(&:strip)
@@ -65,14 +48,6 @@ class PrefecturesController < ApplicationController
       # 朝入場
       morning_entry_count += 1 if shop.morning_entry.present?
     end
-
-    @exchange_rate_stats = exchange_rate_counts
-      .transform_keys { |k| Shop.new(exchange_rate: k).exchange_rate_display }
-      .sort_by { |_, v| -v }
-
-    @slot_rate_stats = rate_counts.sort_by { |k, _| Shop::SLOT_RATES.index(k) || 99 }
-
-    @facility_stats = facility_counts.sort_by { |_, v| -v }
 
     @opening_hours_stats = opening_counts.sort_by { |k, _| k }
     @closing_hours_stats = closing_counts.sort_by { |k, _| k }

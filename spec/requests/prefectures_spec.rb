@@ -17,27 +17,6 @@ RSpec.describe "Prefectures", type: :request do
       expect(response.body).to include('data-controller="shop-filter machine-filter"')
     end
 
-    it "renders filter checkboxes for exchange rate" do
-      get prefecture_path("tokyo")
-      expect(response.body).to include("換金率")
-      expect(response.body).to include('value="equal_rate"')
-      expect(response.body).to include('value="rate_56"')
-    end
-
-    it "renders filter checkboxes for slot rates" do
-      get prefecture_path("tokyo")
-      expect(response.body).to include("レート")
-      expect(response.body).to include('value="20スロ"')
-      expect(response.body).to include('value="5スロ"')
-    end
-
-    it "renders filter checkboxes for facilities" do
-      get prefecture_path("tokyo")
-      expect(response.body).to include("設備")
-      expect(response.body).to include('value="Wi-Fi"')
-      expect(response.body).to include('value="parking"')
-    end
-
     it "renders filter checkboxes for opening hours" do
       get prefecture_path("tokyo")
       expect(response.body).to include("開店時間")
@@ -54,9 +33,6 @@ RSpec.describe "Prefectures", type: :request do
       shop = create(:shop,
         prefecture: prefecture,
         name: "テスト等価店",
-        exchange_rate: :equal_rate,
-        slot_rates: [ "20スロ", "5スロ" ],
-        notes: "Wi-Fi、充電器",
         business_hours: "9:00〜23:00",
         parking_spaces: 100,
         morning_entry: "整理券配布8:30")
@@ -64,8 +40,6 @@ RSpec.describe "Prefectures", type: :request do
       get prefecture_path("tokyo")
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("テスト等価店")
-      expect(response.body).to include('data-filter-exchange="equal_rate"')
-      expect(response.body).to include('data-filter-rates="20スロ,5スロ"')
       expect(response.body).to include('data-filter-morning="yes"')
       expect(response.body).to include('data-shop-card')
     end
@@ -93,36 +67,17 @@ RSpec.describe "Prefectures", type: :request do
 
     context "statistics reverse lookup" do
       before do
-        create(:shop, prefecture: prefecture, name: "等価店A", exchange_rate: :equal_rate,
-               slot_rates: [ "20スロ" ], business_hours: "9:00〜23:00",
-               notes: "Wi-Fi、充電器", parking_spaces: 50, morning_entry: "整理券配布8:30")
-        create(:shop, prefecture: prefecture, name: "非等価店B", exchange_rate: :non_equal,
-               slot_rates: [ "5スロ" ], business_hours: "10:00〜22:45")
-      end
-
-      it "renders clickable exchange rate stats with preset data" do
-        get prefecture_path("tokyo")
-        expect(response.body).to include('data-preset-category="exchange"')
-        expect(response.body).to include('data-preset-value="equal_rate"')
-        expect(response.body).to include('data-action="click->shop-filter#applyPreset"')
-      end
-
-      it "renders clickable slot rate stats with preset data" do
-        get prefecture_path("tokyo")
-        expect(response.body).to include('data-preset-category="rates"')
-        expect(response.body).to include('data-preset-value="20スロ"')
+        create(:shop, prefecture: prefecture, name: "店舗A",
+               business_hours: "9:00〜23:00",
+               parking_spaces: 50, morning_entry: "整理券配布8:30")
+        create(:shop, prefecture: prefecture, name: "店舗B",
+               business_hours: "10:00〜22:45")
       end
 
       it "renders clickable opening hours stats with preset data" do
         get prefecture_path("tokyo")
         expect(response.body).to include('data-preset-category="hours"')
         expect(response.body).to include('data-preset-value="9"')
-      end
-
-      it "renders clickable facility stats with preset data" do
-        get prefecture_path("tokyo")
-        expect(response.body).to include('data-preset-category="facilities"')
-        expect(response.body).to include('data-preset-value="Wi-Fi"')
       end
 
       it "renders clickable parking stat with preset data" do

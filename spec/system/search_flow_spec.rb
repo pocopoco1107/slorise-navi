@@ -35,17 +35,5 @@ RSpec.describe "Search flow", type: :system do
       expect(page).to have_content("条件に一致する店舗がありません")
     end
 
-    it "displays exchange rate filter checkboxes" do
-      visit search_path
-
-      expect(page).to have_content("換金率")
-      expect(page).to have_field("exchange_rates[]", type: "checkbox")
-    end
-
-    it "displays rate filter checkboxes" do
-      visit search_path
-
-      expect(page).to have_content("レート")
-    end
   end
 end

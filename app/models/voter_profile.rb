@@ -14,7 +14,6 @@ class VoterProfile < ApplicationRecord
     confirmed_setting: 2,   # 確定情報の記録
     play_record: 1,         # 収支記録
     feedback: 5,            # フィードバック送信
-    exchange_rate_report: 3, # 交換率報告
     display_name_set: 3,    # ユーザー名設定(初回)
     streak_3: 2,            # 3日連続ボーナス
     streak_7: 5,            # 7日連続ボーナス
@@ -170,9 +169,6 @@ class VoterProfile < ApplicationRecord
 
     # フィードバック (5pt per feedback)
     pts += Feedback.where(voter_token: voter_token).count * POINT_RULES[:feedback]
-
-    # 交換率報告 (3pt per report)
-    pts += ShopContribution.where(voter_token: voter_token).count * POINT_RULES[:exchange_rate_report]
 
     # ユーザー名設定 (3pt, one-time)
     pts += POINT_RULES[:display_name_set] if profile.display_name.present?

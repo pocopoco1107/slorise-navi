@@ -18,7 +18,6 @@ Rails.application.routes.draw do
       get "dates/:date", action: :show_date, as: :date, constraints: { date: /\d{4}-\d{2}-\d{2}/ }
       get :trend_data
       get :calendar
-      post :report_exchange_rate
     end
     resources :shop_reviews, only: [ :create ], path: "reviews"
     resources :shop_events, only: [ :create ], path: "events"
@@ -33,6 +32,7 @@ Rails.application.routes.draw do
   resources :play_records, only: [ :index, :create, :update, :destroy ]
   resources :comments, only: [ :create ]
   resources :reports, only: [ :create ]
+  resources :exchange_rate_reports, only: [ :create ]
   resources :feedbacks, only: [ :new, :create ]
   resources :shop_requests, only: [ :new, :create, :show ]
 

@@ -116,28 +116,6 @@ class ShopsController < ApplicationController
     render layout: false
   end
 
-  def report_exchange_rate
-    @shop = Shop.find_by!(slug: params[:slug])
-    rate = params[:exchange_rate]
-    unless Shop.exchange_rates.key?(rate)
-      redirect_to shop_path(@shop), alert: "無効な交換率です"
-      return
-    end
-
-    contribution = ShopContribution.find_or_initialize_by(
-      voter_token: voter_token,
-      shop: @shop,
-      contribution_type: :exchange_rate
-    )
-    contribution.value = rate
-    contribution.save!
-
-    # Recalculate points
-    VoterProfile.refresh_for(voter_token)
-
-    redirect_to shop_path(@shop), notice: "交換率を報告しました (+#{VoterProfile::POINT_RULES[:exchange_rate_report]}pt)"
-  end
-
   private
 
   def load_shop_data
@@ -180,16 +158,9 @@ class ShopsController < ApplicationController
     @machine_slugs = models_by_id.transform_values(&:slug)
     @comments = @shop.comments.for_date(@date).includes(:user).recent.limit(50)
 
-    # 同じ県・同レートの店舗（最大5件）
-    if @shop.slot_rates.present?
-      @same_rate_shops = Shop.where(prefecture_id: @shop.prefecture_id)
-                              .where.not(id: @shop.id)
-                              .where("slot_rates && ARRAY[?]::varchar[]", @shop.slot_rates)
-                              .order(:name)
-                              .limit(5)
-    else
-      @same_rate_shops = []
-    end
+    # Exchange rate data
+    @exchange_rate_summaries = ExchangeRateSummary.where(shop_id: @shop.id).index_by(&:denomination)
+    @user_exchange_rate_reports = ExchangeRateReport.where(voter_token: voter_token, shop_id: @shop.id).index_by(&:denomination)
 
     # Events (approved only)
     @upcoming_events = @shop.shop_events.visible.upcoming.limit(10)

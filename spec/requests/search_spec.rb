@@ -27,36 +27,6 @@ RSpec.describe "Search", type: :request do
       expect(response.body).not_to include("大阪店舗")
     end
 
-    it "filters by exchange rate" do
-      create(:shop, name: "等価店", exchange_rate: :equal_rate)
-      create(:shop, name: "非等価店", exchange_rate: :non_equal)
-
-      get search_path, params: { exchange_rates: [ "equal_rate" ] }
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include("等価店")
-      expect(response.body).not_to include("非等価店")
-    end
-
-    it "filters by slot rate" do
-      create(:shop, name: "20スロ店", slot_rates: [ "20スロ" ])
-      create(:shop, name: "5スロ店", slot_rates: [ "5スロ" ])
-
-      get search_path, params: { rates: [ "20スロ" ] }
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include("20スロ店")
-      expect(response.body).not_to include("5スロ店")
-    end
-
-    it "filters by facilities" do
-      create(:shop, name: "WiFi店", notes: "Wi-Fi、充電器")
-      create(:shop, name: "普通店", notes: "")
-
-      get search_path, params: { facilities: [ "Wi-Fi" ] }
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include("WiFi店")
-      expect(response.body).not_to include("普通店")
-    end
-
     it "filters by parking" do
       create(:shop, name: "駐車場店", parking_spaces: 100)
       create(:shop, name: "駐車場なし店", parking_spaces: nil)
@@ -99,15 +69,15 @@ RSpec.describe "Search", type: :request do
 
     it "combines multiple filters with AND" do
       pref = create(:prefecture, name: "東京都", slug: "tokyo")
-      create(:shop, name: "東京等価店", prefecture: pref, exchange_rate: :equal_rate)
-      create(:shop, name: "東京非等価店", prefecture: pref, exchange_rate: :non_equal)
-      create(:shop, name: "大阪等価店", exchange_rate: :equal_rate)
+      create(:shop, name: "東京駐車場店", prefecture: pref, parking_spaces: 100)
+      create(:shop, name: "東京駐車場なし店", prefecture: pref, parking_spaces: nil)
+      create(:shop, name: "大阪駐車場店", parking_spaces: 100)
 
-      get search_path, params: { prefectures: [ "tokyo" ], exchange_rates: [ "equal_rate" ] }
+      get search_path, params: { prefectures: [ "tokyo" ], facilities: [ "parking" ] }
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("東京等価店")
-      expect(response.body).not_to include("東京非等価店")
-      expect(response.body).not_to include("大阪等価店")
+      expect(response.body).to include("東京駐車場店")
+      expect(response.body).not_to include("東京駐車場なし店")
+      expect(response.body).not_to include("大阪駐車場店")
     end
 
     it "shows empty state when no results" do

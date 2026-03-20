@@ -32,22 +32,6 @@
             </div>
             <p class="text-xs text-muted-foreground mt-1"><%= shop.prefecture&.name %></p>
             <div class="flex flex-wrap items-center gap-1 mt-1">
-              <% if shop.slot_rates.present? %>
-                <% shop.slot_rates.each do |rate| %>
-                  <span class="bg-primary/10 text-primary text-[10px] font-medium px-1.5 py-0.5 rounded-full"><%= rate %></span>
-                <% end %>
-              <% end %>
-              <% if shop.exchange_rate != "unknown_rate" %>
-                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full
-                  <%= case shop.exchange_rate
-                      when 'equal_rate' then 'bg-primary/10 text-primary'
-                      when 'rate_56' then 'bg-chart-4/10 text-chart-4'
-                      when 'rate_50' then 'bg-chart-5/10 text-chart-5'
-                      when 'non_equal' then 'bg-muted text-muted-foreground'
-                      end %>">
-                  <%= shop.exchange_rate_display %>
-                </span>
-              <% end %>
               <% if shop.address.present? %>
                 <span class="text-[10px] text-muted-foreground truncate max-w-[200px]"><%= shop.address %></span>
               <% end %>

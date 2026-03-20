@@ -432,72 +432,25 @@
     </div>
 
     <% if @installed_shops.any? %>
-      <!-- Rate Filter (Client-side) -->
-      <div data-controller="machine-shop-filter">
-        <%
-          all_rates = @installed_shops.flat_map { |s| s.slot_rates || [] }.uniq.sort
-        %>
-        <% if all_rates.any? %>
-          <div class="flex items-center gap-2 flex-wrap mb-3">
-            <span class="text-xs text-muted-foreground font-medium shrink-0">レート:</span>
-            <% all_rates.each do |rate| %>
-              <button type="button"
-                      data-machine-shop-filter-target="rateButton"
-                      data-action="click->machine-shop-filter#toggleRate"
-                      data-rate="<%= rate %>"
-                      class="bg-secondary text-secondary-foreground text-[11px] px-3 py-1.5 rounded-md border border-border hover:bg-primary/10 hover:text-primary active:scale-95 transition-all duration-150 cursor-pointer min-h-[32px]">
-                <%= rate %>
-              </button>
-            <% end %>
-            <button type="button"
-                    data-action="click->machine-shop-filter#clearRates"
-                    class="text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer">
-              クリア
-            </button>
-            <span data-machine-shop-filter-target="count" class="text-[10px] text-muted-foreground ml-auto"></span>
-          </div>
-        <% end %>
-
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
           <% @installed_shops.group_by { |s| s.prefecture.name }.each do |pref_name, shops| %>
             <% shops.each do |shop| %>
               <%= link_to shop_path(shop.slug),
-                    data: { machine_shop_filter_target: "card", rates: (shop.slot_rates || []).join(",") },
                     class: "bg-card border border-border rounded-lg px-3 py-2.5 hover:bg-secondary hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-150 block min-h-[44px]" do %>
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-sm font-medium text-primary truncate"><%= favorite_mark(shop) %> <%= shop.name %></span>
                   <span class="text-[10px] text-muted-foreground shrink-0"><%= pref_name %></span>
                 </div>
                 <div class="flex flex-wrap items-center gap-1 mt-1.5">
-                  <% if shop.slot_rates.present? %>
-                    <% shop.slot_rates.each do |rate| %>
-                      <span class="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-md"><%= rate %></span>
-                    <% end %>
-                  <% end %>
-                  <% if shop.exchange_rate != "unknown_rate" %>
-                    <span class="text-[10px] text-muted-foreground"><%= shop.exchange_rate_display %></span>
-                  <% end %>
                   <% unit = @unit_counts[shop.id] %>
                   <% if unit %>
                     <span class="text-[10px] text-setting-4"><%= unit %>台</span>
-                  <% end %>
-                  <% if shop.notes.present? %>
-                    <%
-                      icons = []
-                      icons << "📶" if shop.notes.include?("Wi-Fi")
-                      icons << "🔌" if shop.notes.include?("充電器")
-                      icons << "🚬" if shop.notes.match?(/喫煙|たばこ/)
-                    %>
-                    <% if icons.any? %>
-                      <span class="text-[10px]"><%= icons.join(" ") %></span>
-                    <% end %>
                   <% end %>
                 </div>
               <% end %>
             <% end %>
           <% end %>
         </div>
-      </div>
 
       <nav class="flex justify-center">
         <%= paginate @installed_shops, param_name: :shops_page %>

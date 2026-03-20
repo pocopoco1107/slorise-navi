@@ -1,10 +1,8 @@
 ActiveAdmin.register Shop do
   permit_params :prefecture_id, :name, :address, :lat, :lng, :slug,
-                :exchange_rate, :total_machines, :slot_machines,
-                :business_hours, :opened_on, :former_event_days, :notes,
-                :parking_spaces, :phone_number, :morning_entry, :access_info, :features,
-                :pworld_url,
-                slot_rates: []
+                :total_machines, :slot_machines,
+                :business_hours, :opened_on,
+                :parking_spaces, :phone_number, :morning_entry, :access_info, :features
 
   action_item :import_csv, only: :index do
     link_to "CSVインポート", action: :import_csv_form
@@ -51,23 +49,14 @@ ActiveAdmin.register Shop do
       }
       # Optional fields: only overwrite if CSV value is present
       attrs[:address] = row["address"] if row["address"].present?
-      attrs[:slot_rates] = row["slot_rates"].split(/[|,]/).map(&:strip).reject(&:blank?) if row["slot_rates"].present?
-      attrs[:exchange_rate] = row["exchange_rate"] if row["exchange_rate"].present?
       attrs[:total_machines] = row["total_machines"] if row["total_machines"].present?
       attrs[:slot_machines] = row["slot_machines"] if row["slot_machines"].present?
       attrs[:business_hours] = row["business_hours"] if row["business_hours"].present?
-      attrs[:former_event_days] = row["former_event_days"] if row["former_event_days"].present?
-      attrs[:notes] = row["notes"] if row["notes"].present?
       attrs[:parking_spaces] = row["parking_spaces"] if row["parking_spaces"].present?
       attrs[:phone_number] = row["phone_number"] if row["phone_number"].present?
       attrs[:morning_entry] = row["morning_entry"] if row["morning_entry"].present?
       attrs[:access_info] = row["access_info"] if row["access_info"].present?
       attrs[:features] = row["features"] if row["features"].present?
-      attrs[:pworld_url] = row["pworld_url"] if row["pworld_url"].present?
-
-      # Defaults for new records
-      attrs[:exchange_rate] ||= "unknown_rate" if is_new
-
 
       shop.assign_attributes(attrs)
 
@@ -88,8 +77,6 @@ ActiveAdmin.register Shop do
     id_column
     column :name
     column :prefecture
-    column("レート") { |s| s.slot_rates_display }
-    column("換金率") { |s| s.exchange_rate_display }
     column :slot_machines
     column :address
     actions
@@ -97,7 +84,6 @@ ActiveAdmin.register Shop do
 
   filter :name
   filter :prefecture
-  filter :exchange_rate, as: :select, collection: Shop.exchange_rates
   filter :address
 
   show do
@@ -106,20 +92,15 @@ ActiveAdmin.register Shop do
       row :prefecture
       row :address
       row :slug
-      row("レート") { |s| s.slot_rates_display }
-      row("換金率") { |s| s.exchange_rate_display }
       row :total_machines
       row :slot_machines
       row :business_hours
       row :opened_on
-      row :former_event_days
-      row :notes
       row :parking_spaces
       row :phone_number
       row :morning_entry
       row :access_info
       row :features
-      row :pworld_url
       row :lat
       row :lng
     end
@@ -135,20 +116,15 @@ ActiveAdmin.register Shop do
       f.input :lng
     end
     f.inputs "店舗詳細" do
-      f.input :slot_rates, as: :check_boxes, collection: Shop::SLOT_RATES
-      f.input :exchange_rate, as: :select, collection: [ [ "未設定", "unknown_rate" ], [ "等価", "equal_rate" ], [ "5.6枚交換", "rate_56" ], [ "5.0枚交換", "rate_50" ], [ "非等価", "non_equal" ] ]
       f.input :total_machines
       f.input :slot_machines
       f.input :business_hours, placeholder: "10:00〜22:45"
       f.input :opened_on, as: :datepicker
-      f.input :former_event_days, placeholder: "毎月7日, 17日, 27日"
       f.input :parking_spaces
       f.input :phone_number
       f.input :morning_entry, placeholder: "09:40 抽選受付..."
       f.input :access_info, placeholder: "◯◯駅から徒歩5分"
       f.input :features, as: :text, input_html: { rows: 2 }
-      f.input :notes, as: :text
-      f.input :pworld_url
     end
     f.actions
   end

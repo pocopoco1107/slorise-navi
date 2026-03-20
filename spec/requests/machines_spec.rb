@@ -75,25 +75,6 @@ RSpec.describe "Machines", type: :request do
       expect(response.body).to include("設置店舗情報がありません")
     end
 
-    it "shows rate badges on shop cards" do
-      shop = create(:shop, slot_rates: [ "20スロ", "5スロ" ])
-      ShopMachineModel.create!(shop: shop, machine_model: machine)
-
-      get machine_path(machine.slug)
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include("20スロ")
-      expect(response.body).to include("5スロ")
-    end
-
-    it "shows exchange rate on shop cards" do
-      shop = create(:shop, exchange_rate: :equal_rate)
-      ShopMachineModel.create!(shop: shop, machine_model: machine)
-
-      get machine_path(machine.slug)
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include("等価")
-    end
-
     it "paginates installed shops" do
       35.times do
         shop = create(:shop)

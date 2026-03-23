@@ -18,7 +18,7 @@ class ShopRequestsController < ApplicationController
   end
 
   def show
-    @shop_request = ShopRequest.find(params[:id])
+    @shop_request = ShopRequest.find_by!(id: params[:id], voter_token: voter_token)
   end
 
   private

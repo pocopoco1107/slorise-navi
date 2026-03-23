@@ -76,7 +76,7 @@ class HomeController < ApplicationController
     @play_records_count = Rails.cache.fetch("home/play_records_count", expires_in: 10.minutes) { PlayRecord.count }
 
     # Personal data (voter label + play summary)
-    token = cookies[:voter_token]
+    token = voter_token
     if token.present?
       profile = VoterProfile.find_by(voter_token: token)
       @voter_label = profile&.display_name.presence || "ユーザー##{token.last(4)}"

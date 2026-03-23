@@ -4,9 +4,9 @@ class PlayRecordsController < ApplicationController
 
   def index
     set_meta_tags title: "収支カレンダー", noindex: true
-    token = cookies[:voter_token]
+    token = voter_token
 
-    @current_month = if params[:month].present?
+    @current_month = if params[:month].present? && params[:month].match?(/\A\d{4}-\d{2}\z/)
                        Date.parse("#{params[:month]}-01")
     else
                        Date.current.beginning_of_month
@@ -39,13 +39,14 @@ class PlayRecordsController < ApplicationController
     # Load user votes and vote summaries for records that have a machine_model
     record_keys = @records.select(&:machine_model_id).map { |r| [ r.shop_id, r.machine_model_id, r.played_on ] }.uniq
     if record_keys.any?
-      vote_conditions = record_keys.map { |sid, mid, d| "(shop_id = #{sid.to_i} AND machine_model_id = #{mid.to_i} AND voted_on = '#{d}')" }
-      votes = Vote.where(voter_token: token).where(vote_conditions.join(" OR "))
-      @user_votes_by_key = votes.index_by { |v| [ v.shop_id, v.machine_model_id, v.voted_on ] }
-
-      summary_conditions = record_keys.map { |sid, mid, d| "(shop_id = #{sid.to_i} AND machine_model_id = #{mid.to_i} AND target_date = '#{d}')" }
-      summaries = VoteSummary.where(summary_conditions.join(" OR "))
-      @vote_summaries_by_key = summaries.index_by { |vs| [ vs.shop_id, vs.machine_model_id, vs.target_date ] }
+      vote_scope = Vote.where(voter_token: token).none
+      summary_scope = VoteSummary.none
+      record_keys.each do |sid, mid, d|
+        vote_scope = vote_scope.or(Vote.where(voter_token: token, shop_id: sid, machine_model_id: mid, voted_on: d))
+        summary_scope = summary_scope.or(VoteSummary.where(shop_id: sid, machine_model_id: mid, target_date: d))
+      end
+      @user_votes_by_key = vote_scope.index_by { |v| [ v.shop_id, v.machine_model_id, v.voted_on ] }
+      @vote_summaries_by_key = summary_scope.index_by { |vs| [ vs.shop_id, vs.machine_model_id, vs.target_date ] }
     else
       @user_votes_by_key = {}
       @vote_summaries_by_key = {}
@@ -53,7 +54,7 @@ class PlayRecordsController < ApplicationController
   end
 
   def create
-    token = cookies[:voter_token]
+    token = voter_token
 
     if params[:entries].present?
       create_multiple(token)
@@ -112,8 +113,9 @@ class PlayRecordsController < ApplicationController
     else
       respond_to do |format|
         format.turbo_stream do
-          render turbo_stream: turbo_stream.replace("vote_errors",
-            "<div id=\"vote_errors\" class=\"bg-destructive/10 text-destructive text-xs p-2 rounded mb-2\">#{@record.errors.full_messages.join(', ')}</div>")
+          error_html = helpers.content_tag(:div, @record.errors.full_messages.join(", "),
+            id: "vote_errors", class: "bg-destructive/10 text-destructive text-xs p-2 rounded mb-2")
+          render turbo_stream: turbo_stream.replace("vote_errors", error_html)
         end
         format.html do
           if params[:return_to].present? && params[:return_to].start_with?("/")
@@ -128,6 +130,10 @@ class PlayRecordsController < ApplicationController
 
   def create_multiple(token)
     entries = params[:entries].values
+    if entries.size > 50
+      redirect_to play_records_path, alert: "一度に記録できるのは50件までです"
+      return
+    end
     shop_id = params[:shop_id]
     played_on = params[:played_on]
     is_public = params[:is_public] != "0"
@@ -197,14 +203,14 @@ class PlayRecordsController < ApplicationController
   end
 
   def set_play_record
-    @record = PlayRecord.find_by!(id: params[:id], voter_token: cookies[:voter_token])
+    @record = PlayRecord.find_by!(id: params[:id], voter_token: voter_token)
   end
 
   def render_shop_machine_update(shop: nil, machine_model_id: nil, played_on: nil)
     shop ||= @record.shop
     machine_model_id ||= @record.machine_model_id
     played_on ||= @record.played_on
-    token = cookies[:voter_token]
+    token = voter_token
 
     machine_model = MachineModel.find(machine_model_id)
     vote_summary = VoteSummary.find_by(shop_id: shop.id, machine_model_id: machine_model_id, target_date: played_on)

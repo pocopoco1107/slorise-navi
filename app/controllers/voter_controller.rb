@@ -2,12 +2,7 @@ class VoterController < ApplicationController
   def status
     set_meta_tags title: "マイステータス", noindex: true
 
-    token = cookies[:voter_token]
-
-    if token.blank?
-      @has_votes = false
-      return
-    end
+    token = voter_token
 
     @profile = VoterProfile.find_by(voter_token: token)
     @has_votes = @profile.present? && @profile.total_votes > 0
@@ -42,12 +37,7 @@ class VoterController < ApplicationController
   end
 
   def update_display_name
-    token = cookies[:voter_token]
-    if token.blank?
-      redirect_to voter_status_path, alert: "先に記録を行ってください"
-      return
-    end
-
+    token = voter_token
     profile = VoterProfile.find_or_initialize_by(voter_token: token)
     name = params[:display_name].to_s.strip
     if name.length > 20

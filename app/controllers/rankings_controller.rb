@@ -28,7 +28,7 @@ class RankingsController < ApplicationController
     ).order(:rank_position).limit(50)
 
     # Current user's rank
-    token = cookies[:voter_token]
+    token = voter_token
     if token.present?
       @my_rank = VoterRanking.find_by(
         voter_token: token,

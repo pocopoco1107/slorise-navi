@@ -45,12 +45,22 @@ RSpec.describe "ShopRequests", type: :request do
   end
 
   describe "GET /shop_requests/:id" do
-    it "shows the request status" do
-      shop_request = create(:shop_request)
+    let(:token) { "shop_request_test_token" }
+
+    it "shows the request status to the owner" do
+      cookies[:voter_token] = token
+      shop_request = create(:shop_request, voter_token: token)
       get shop_request_path(shop_request)
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(shop_request.name)
       expect(response.body).to include("審査待ち")
+    end
+
+    it "rejects access from a different voter" do
+      cookies[:voter_token] = "other_token"
+      shop_request = create(:shop_request, voter_token: token)
+      get shop_request_path(shop_request)
+      expect(response).to have_http_status(:not_found)
     end
   end
 end

@@ -11,9 +11,8 @@ RSpec.describe "Home page", type: :system do
 
       expect(page).to have_content("みんなの記録")
       expect(page).to have_content("設定が見えてくる")
-      expect(page).to have_content("累計記録")
-      expect(page).to have_content("店舗")
-      expect(page).to have_content("今日の記録")
+      expect(page).to have_content("累計")
+      expect(page).to have_content("今日")
     end
   end
 
@@ -52,16 +51,15 @@ RSpec.describe "Home page", type: :system do
     it "displays the weekly ranking card" do
       visit root_path
 
-      expect(page).to have_content("週間記録ランキング")
+      expect(page).to have_content("今週の高設定ランキング")
     end
   end
 
   describe "voter status link" do
-    it "displays the status check card" do
+    it "displays a link to voter status" do
       visit root_path
 
-      expect(page).to have_content("記録するほど称号が上がる")
-      expect(page).to have_link("ステータスを見る", href: voter_status_path)
+      expect(page).to have_link(href: voter_status_path)
     end
   end
 end

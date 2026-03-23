@@ -910,7 +910,7 @@ namespace :ptown do
           end
 
           # 削除（ptownに載っていない機種を除去）
-          stale = existing_smms.reject { |pid, _| pid.nil? || page_ptown_ids.include?(pid) }
+          stale = existing_smms.reject { |pid, smm| pid.nil? || page_ptown_ids.include?(pid) || smm.data_source == "pworld" }
           if stale.any?
             ShopMachineModel.where(id: stale.values.map(&:id)).delete_all
             pref_removed += stale.size
@@ -1129,105 +1129,6 @@ namespace :ptown do
     puts "ptown_id未マッチ: #{no_ptown} (#{(no_ptown * 100.0 / active).round(1)}%)"
   end
 
-  desc "P-WORLD由来データを整理し、DMMぱちタウン一本化"
-  task purge_pworld: :environment do
-    $stdout.sync = true
-    puts "=== P-WORLD由来データ整理 ==="
-
-    # 1. ptown_idなし機種のVote/PlayRecordをptown機種に移行
-    puts "\n--- ユーザーデータ移行 ---"
-    ptown_core_map = {}
-    MachineModel.where.not(ptown_id: nil).find_each do |m|
-      cn = PtownScraper.core_name(m.name)
-      ptown_core_map[cn] = m if cn.present?
-    end
-
-    migrated_votes = 0
-    migrated_prs = 0
-
-    MachineModel.where(ptown_id: nil).find_each do |m|
-      cn = PtownScraper.core_name(m.name)
-      keeper = ptown_core_map[cn]
-
-      if keeper
-        migrated_votes += Vote.where(machine_model_id: m.id).update_all(machine_model_id: keeper.id)
-        VoteSummary.where(machine_model_id: m.id).update_all(machine_model_id: keeper.id)
-        migrated_prs += PlayRecord.where(machine_model_id: m.id).update_all(machine_model_id: keeper.id)
-      end
-    end
-    puts "Vote移行: #{migrated_votes}件, PlayRecord移行: #{migrated_prs}件"
-
-    # 2. ptown_shop_idなし店舗のVote/PlayRecordをptown店舗に移行
-    puts "\n--- 店舗ユーザーデータ移行 ---"
-    ptown_shop_map = {}
-    ptown_shop_prefix_map = {}
-    Shop.where.not(ptown_shop_id: nil).find_each do |s|
-      normalized = s.name.unicode_normalize(:nfkc).gsub(/[[:space:]]/, "")
-      ptown_shop_map[normalized] = s
-      prefix = normalized[0..5]
-      ptown_shop_prefix_map[prefix] ||= s
-    end
-
-    migrated_shop_votes = 0
-    migrated_shop_prs = 0
-
-    Shop.where(ptown_shop_id: nil).find_each do |s|
-      next unless Vote.where(shop_id: s.id).exists? || PlayRecord.where(shop_id: s.id).exists?
-
-      normalized = s.name.unicode_normalize(:nfkc).gsub(/[[:space:]]/, "")
-      keeper = ptown_shop_map[normalized] || ptown_shop_prefix_map[normalized[0..5]]
-
-      if keeper
-        migrated_shop_votes += Vote.where(shop_id: s.id).update_all(shop_id: keeper.id)
-        migrated_shop_prs += PlayRecord.where(shop_id: s.id).update_all(shop_id: keeper.id)
-        VoteSummary.where(shop_id: s.id).update_all(shop_id: keeper.id)
-      else
-        puts "  WARNING: 移行先なし: #{s.name} (Vote: #{Vote.where(shop_id: s.id).count}, PR: #{PlayRecord.where(shop_id: s.id).count})"
-      end
-    end
-    puts "店舗Vote移行: #{migrated_shop_votes}件, 店舗PlayRecord移行: #{migrated_shop_prs}件"
-
-    # 3. ptown_idなし機種を全てinactive化
-    puts "\n--- P-WORLD由来機種の非アクティブ化 ---"
-    pworld_machines = MachineModel.where(ptown_id: nil, active: true)
-    count = pworld_machines.count
-    pworld_machines.update_all(active: false)
-    puts "非アクティブ化: #{count}件"
-
-    # 4. ptown_idなし機種のSMMを削除
-    puts "\n--- P-WORLD由来SMMの削除 ---"
-    pworld_machine_ids = MachineModel.where(ptown_id: nil).pluck(:id)
-    smm_count = ShopMachineModel.where(machine_model_id: pworld_machine_ids).count
-    ShopMachineModel.where(machine_model_id: pworld_machine_ids).delete_all
-    puts "削除: #{smm_count}件のShopMachineModel"
-
-    # 5. ptown_shop_idなし店舗を削除（カスケードでSMM/Vote等も削除）
-    puts "\n--- P-WORLD由来店舗の削除 ---"
-    pworld_shop_ids = Shop.where(ptown_shop_id: nil).pluck(:id)
-    # 安全チェック: Vote/PlayRecordが残っていないか
-    remaining_votes = Vote.where(shop_id: pworld_shop_ids).count
-    remaining_prs = PlayRecord.where(shop_id: pworld_shop_ids).count
-    if remaining_votes > 0 || remaining_prs > 0
-      puts "  WARNING: まだユーザーデータが残っている (Vote: #{remaining_votes}, PR: #{remaining_prs})"
-      puts "  手動確認が必要なためスキップ"
-    else
-      # SMMを先に削除（外部キー制約対策）
-      ShopMachineModel.where(shop_id: pworld_shop_ids).delete_all
-      VoteSummary.where(shop_id: pworld_shop_ids).delete_all
-      Shop.where(id: pworld_shop_ids).delete_all
-      puts "削除: #{pworld_shop_ids.size}件の店舗"
-    end
-
-    # 6. サマリー
-    puts "\n=== 整理後の状態 ==="
-    puts "MachineModel: #{MachineModel.count} (active: #{MachineModel.where(active: true).count})"
-    puts "  ptown_idあり: #{MachineModel.where.not(ptown_id: nil).count}"
-    puts "  ptown_idなし: #{MachineModel.where(ptown_id: nil).count} (全てinactive)"
-    puts "Shop: #{Shop.count}"
-    puts "  ptown_shop_idあり: #{Shop.where.not(ptown_shop_id: nil).count}"
-    puts "ShopMachineModel: #{ShopMachineModel.count}"
-    puts "Vote: #{Vote.count}, PlayRecord: #{PlayRecord.count}"
-  end
 end
 
 # Helper: build mapping of MachineModel -> ptown_id

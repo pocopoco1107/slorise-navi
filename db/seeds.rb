@@ -65,7 +65,7 @@ puts "  Prefectures: #{Prefecture.count}"
 # -----------------------------------------------
 # 2-7: Demo data (development/test only)
 # In production, shops/machines are imported via rake tasks:
-#   - Shops:    rake ptown:import_shops / pworld:scrape_shops
+#   - Shops:    rake ptown:import_shops
 #   - Machines: rake ptown:import_machines / ptown:import_details
 # -----------------------------------------------
 unless Rails.env.production?
